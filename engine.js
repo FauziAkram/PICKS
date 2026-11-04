@@ -1,12 +1,11 @@
 /**
- * RoshEngine: Pairwise TrueSynergy, 10-Slot Picked Log Matrix, Swap Deltas, and Personal Bias.
+ * RoshEngine: Pairwise TrueSynergy, Role Qualification, 10-Slot Matrix, and Personal Bias.
  */
 export class RoshEngine {
   constructor(heroes = []) {
     this.heroes = heroes;
     this.heroMap = new Map(heroes.map(h => [h.id, h]));
     
-    // Draft State
     this.radiantPicks = { 1: null, 2: null, 3: null, 4: null, 5: null };
     this.direPicks = { 1: null, 2: null, 3: null, 4: null, 5: null };
     this.originalTS = { radiant: 0, dire: 0 };
@@ -70,11 +69,8 @@ export class RoshEngine {
 
   toggleBan(faction, heroId) {
     const banSet = faction === "radiant" ? this.radiantBans : this.direBans;
-    if (banSet.has(heroId)) {
-      banSet.delete(heroId);
-    } else {
-      banSet.add(heroId);
-    }
+    if (banSet.has(heroId)) banSet.delete(heroId);
+    else banSet.add(heroId);
   }
 
   resetDraft() {
@@ -86,30 +82,47 @@ export class RoshEngine {
   }
 
   /**
-   * Pairwise synergy/counter score between two heroes
+   * Checks if a hero qualifies for a specific position (STRATZ Role Qualification)
    */
+  isHeroQualifiedForPosition(hero, targetPos) {
+    if (hero.defaultPos === targetPos) return true;
+    const roles = hero.roles || [];
+
+    switch (targetPos) {
+      case 1: // Carry
+        return roles.includes("Carry");
+      case 2: // Mid
+        return roles.includes("Nuker") && (hero.primaryAttr === "int" || roles.includes("Escape") || hero.defaultPos === 2);
+      case 3: // Offlane
+        return roles.includes("Initiator") || roles.includes("Durable");
+      case 4: // Soft Support
+        return roles.includes("Support") || roles.includes("Disabler");
+      case 5: // Hard Support
+        return roles.includes("Support") || hero.defaultPos === 5;
+      default:
+        return true;
+    }
+  }
+
   getPairwiseInteraction(heroA_id, heroB_id, isAlly) {
-    // Deterministic pseudo-interaction based on hero attributes & roles
     const a = this.heroMap.get(heroA_id);
     const b = this.heroMap.get(heroB_id);
     if (!a || !b) return 0;
 
     let delta = 0;
     if (isAlly) {
-      // Complementary roles (e.g. Carry + Support) have positive synergy
-      if ((a.roles.includes("Carry") && b.roles.includes("Support")) ||
-          (a.roles.includes("Support") && b.roles.includes("Carry"))) {
+      if ((a.roles?.includes("Carry") && b.roles?.includes("Support")) ||
+          (a.roles?.includes("Support") && b.roles?.includes("Carry"))) {
         delta += 1.8;
-      } else if (a.roles.includes("Initiator") && b.roles.includes("Nuker")) {
+      } else if (a.roles?.includes("Initiator") && b.roles?.includes("Nuker")) {
         delta += 1.2;
       } else {
         delta += 0.5;
       }
     } else {
-      // Counter heuristics (e.g., Nukers counter squishy Carries, Durable counters Nukers)
-      if (b.roles.includes("Disabler") && a.roles.includes("Escape")) {
+      if (b.roles?.includes("Disabler") && a.roles?.includes("Escape")) {
         delta -= 2.1;
-      } else if (b.roles.includes("Durable") && a.roles.includes("Nuker")) {
+      } else if (b.roles?.includes("Durable") && a.roles?.includes("Nuker")) {
         delta -= 1.5;
       } else {
         delta -= 0.8;
@@ -118,9 +131,6 @@ export class RoshEngine {
     return parseFloat(delta.toFixed(1));
   }
 
-  /**
-   * Returns the complete 10-row Picked Log matrix for a picked hero
-   */
   getPickedLog(heroId, pos, faction) {
     const hero = this.heroMap.get(heroId);
     if (!hero) return [];
@@ -131,11 +141,10 @@ export class RoshEngine {
 
     const rows = [];
 
-    // Rows 1-5: Radiant slots
+    // Rows 1 to 5: Radiant
     for (let p = 1; p <= 5; p++) {
       const slotHeroId = isRadiant ? allies[p] : enemies[p];
       if (slotHeroId === heroId) {
-        // Self base role score
         rows.push({
           pos: p,
           faction: "radiant",
@@ -158,7 +167,7 @@ export class RoshEngine {
       }
     }
 
-    // Rows 6-10: Dire slots
+    // Rows 6 to 10: Dire
     for (let p = 1; p <= 5; p++) {
       const slotHeroId = !isRadiant ? allies[p] : enemies[p];
       if (slotHeroId === heroId) {
@@ -246,7 +255,13 @@ export class RoshEngine {
 
     for (const hero of this.heroes) {
       if (pickedSet.has(hero.id)) continue;
-      if (query && !hero.name.toLowerCase().includes(query)) continue;
+      
+      // If user typed a search, let them find any hero. Otherwise, enforce Role Qualification!
+      if (query) {
+        if (!hero.name.toLowerCase().includes(query)) continue;
+      } else {
+        if (!this.isHeroQualifiedForPosition(hero, targetPos)) continue;
+      }
 
       const rawTS = this.calculateHeroTrueSynergy(hero.id, targetPos, faction);
       const bias = this.getBias(hero.id);
