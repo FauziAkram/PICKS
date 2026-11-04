@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROSH Draft Assistant & Bias Engine</title>
+  <!-- Tailwind CSS via CDN for styling without a terminal -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            stratzDark: '#0e121a',
+            stratzCard: '#151b26',
+            stratzBorder: '#232b3b',
+            radiantGreen: '#00d68f',
+            direRed: '#ff3d71',
+            accentGold: '#f59e0b'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-stratzDark text-gray-200 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="bg-stratzCard border-b border-stratzBorder px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <span class="text-2xl font-black tracking-wider text-accentGold">ROSH</span>
+      <span class="text-xs bg-stratzBorder text-gray-400 px-2 py-0.5 rounded font-mono uppercase tracking-widest">Custom Bias Edition</span>
+    </div>
+    <div class="text-sm text-gray-400">
+      Status: <span class="text-radiantGreen font-medium">Ready</span>
+    </div>
+  </header>
+
+  <!-- Main Container Placeholder -->
+  <main class="flex-1 p-6 max-w-7xl mx-auto w-full flex items-center justify-center">
+    <div class="text-center p-8 bg-stratzCard border border-stratzBorder rounded-xl max-w-md w-full shadow-2xl">
+      <h1 class="text-xl font-bold text-white mb-2">Project Initialized</h1>
+      <p class="text-sm text-gray-400 mb-4">The baseline structure is ready. Next, we will connect this page to the web and start building the draft board.</p>
+      <div class="inline-block px-3 py-1 bg-stratzBorder rounded text-xs text-accentGold font-mono">Step 2 Complete</div>
+    </div>
+  </main>
+
+</body>
+</html>
