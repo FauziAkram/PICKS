@@ -23,7 +23,6 @@
     }
   </script>
   <style>
-    /* Custom scrollbars matching STRATZ */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: #090c10; }
     ::-webkit-scrollbar-thumb { background: #232c3d; border-radius: 2px; }
@@ -32,7 +31,7 @@
 </head>
 <body class="bg-stratzBg text-gray-200 min-h-screen flex flex-col font-sans select-none overflow-x-auto">
 
-  <!-- Minimal Utilities Header -->
+  <!-- Top Utilities Header -->
   <header class="bg-stratzCard/90 border-b border-stratzBorder px-6 py-2.5 flex items-center justify-between text-xs min-w-[1340px]">
     <div class="flex items-center space-x-4">
       <div class="flex items-center space-x-2">
@@ -75,7 +74,9 @@
         <div class="flex items-center space-x-3">
           <div class="w-8 h-8 rounded bg-radiant/20 border border-radiant/40 flex items-center justify-center text-radiant font-black text-sm">🌳</div>
           <span class="text-base font-bold text-white">Radiant</span>
-          <button id="btnRadiantBans" class="text-xs bg-stratzBorder hover:bg-gray-700 text-gray-300 px-2.5 py-1 rounded font-medium transition">Select Bans</button>
+          <button id="btnRadiantBans" class="text-xs bg-stratzBorder hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded font-medium transition cursor-pointer">
+            Select Bans
+          </button>
         </div>
         <div class="flex items-center space-x-4">
           <div class="text-right">
@@ -104,7 +105,9 @@
           </div>
         </div>
         <div class="flex items-center space-x-3">
-          <button id="btnDireBans" class="text-xs bg-stratzBorder hover:bg-gray-700 text-gray-300 px-2.5 py-1 rounded font-medium transition">Select Bans</button>
+          <button id="btnDireBans" class="text-xs bg-stratzBorder hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded font-medium transition cursor-pointer">
+            Select Bans
+          </button>
           <span class="text-base font-bold text-white">Dire</span>
           <div class="w-8 h-8 rounded bg-dire/20 border border-dire/40 flex items-center justify-center text-dire font-black text-sm">🌋</div>
         </div>
@@ -113,24 +116,27 @@
     </div>
   </div>
 
-  <!-- 10-Column ROSH Grid Container -->
+  <!-- 10-Column ROSH Grid -->
   <main class="flex-1 px-6 py-4 min-w-[1340px]">
     <div class="grid grid-cols-2 gap-8 max-w-[1600px] mx-auto">
-      
-      <!-- Radiant 5 Columns -->
-      <div id="radiantColumns" class="grid grid-cols-5 gap-2.5">
-        <!-- Rendered via JS: Radiant Pos 1, 2, 3, 4, 5 -->
-      </div>
-
-      <!-- Dire 5 Columns -->
-      <div id="direColumns" class="grid grid-cols-5 gap-2.5">
-        <!-- Rendered via JS: Dire Pos 1, 2, 3, 4, 5 -->
-      </div>
-
+      <div id="radiantColumns" class="grid grid-cols-5 gap-2.5"></div>
+      <div id="direColumns" class="grid grid-cols-5 gap-2.5"></div>
     </div>
   </main>
 
-  <!-- Personal Bias Modal Placeholder -->
+  <!-- Ban Selection Modal -->
+  <div id="banModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-stratzCard border border-stratzBorder rounded-xl max-w-2xl w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-stratzBorder pb-3 mb-4">
+        <h3 id="banModalTitle" class="text-base font-bold text-white">Select Bans</h3>
+        <button id="btnCloseBanModal" class="text-gray-400 hover:text-white text-lg font-bold px-2 cursor-pointer">✕</button>
+      </div>
+      <input type="text" id="banSearchInput" placeholder="Filter hero to ban..." class="w-full bg-stratzBg border border-stratzBorder rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-gold mb-3">
+      <div id="banGrid" class="grid grid-cols-6 gap-2 max-h-96 overflow-y-auto pr-1"></div>
+    </div>
+  </div>
+
+  <!-- Personal Bias Modal -->
   <div id="biasModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
     <div class="bg-stratzCard border border-stratzBorder rounded-xl max-w-2xl w-full p-6 shadow-2xl">
       <div class="flex items-center justify-between border-b border-stratzBorder pb-3 mb-4">
@@ -138,17 +144,15 @@
           <span>⚙️ Custom Hero Biases</span>
           <span class="text-xs text-gold font-normal">(Personalize recommendations)</span>
         </h3>
-        <button id="btnCloseBiasModal" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
+        <button id="btnCloseBiasModal" class="text-gray-400 hover:text-white text-lg font-bold px-2 cursor-pointer">✕</button>
       </div>
       <p class="text-xs text-gray-400 mb-4">
-        Give positive points to heroes you master, and heavy negative points to heroes you never play. The ROSH engine will adapt all 10 recommendation columns accordingly.
+        Set positive bias for heroes you master, and heavy negative bias for heroes you never play.
       </p>
-      <div id="biasHeroList" class="max-h-96 overflow-y-auto space-y-2 pr-2 text-xs">
-        <!-- Populated via JS -->
-      </div>
+      <div id="biasHeroList" class="max-h-96 overflow-y-auto space-y-2 pr-2 text-xs"></div>
     </div>
   </div>
 
-<script type="module" src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
