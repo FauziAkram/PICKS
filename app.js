@@ -4,12 +4,12 @@ import { RoshEngine } from "./engine.js";
 
 let engine = null;
 let currentSearchQueries = { radiant: {}, dire: {} };
+let currentBanFaction = null;
 
 async function init() {
   const rankSelect = document.getElementById("rankSelector");
   const initialRank = rankSelect ? rankSelect.value : "LEGEND";
 
-  // Fetch live stats from Dota 2 API
   const heroes = await fetchLiveHeroStats(initialRank);
   engine = new RoshEngine(heroes);
 
@@ -48,7 +48,7 @@ function renderColumns(faction) {
   for (let pos = 1; pos <= 5; pos++) {
     const heroId = picks[pos];
     const col = document.createElement("div");
-    col.className = "flex flex-col bg-stratzCard border border-stratzBorder rounded-lg overflow-hidden h-[720px]";
+    col.className = "flex flex-col bg-stratzCard border border-stratzBorder rounded-lg overflow-hidden h-[740px]";
 
     if (heroId) {
       renderPickedColumn(col, faction, pos, heroId);
@@ -79,7 +79,7 @@ function renderEmptyColumn(col, faction, pos) {
         data-faction="${faction}" data-pos="${pos}">
     </div>
 
-    <!-- Scrollable Candidate Recommendation List -->
+    <!-- Recommendation Rows -->
     <div class="flex-1 overflow-y-auto p-1.5 space-y-1">
       ${candidates.slice(0, 40).map(({ hero, rawTS, bias, biasedScore }) => `
         <div class="candidate-row group flex items-center justify-between p-1 rounded hover:bg-stratzBorder/60 cursor-pointer transition border border-transparent hover:border-stratzBorder"
@@ -101,20 +101,14 @@ function renderEmptyColumn(col, faction, pos) {
     </div>
   `;
 
-  // Attach search input listener
-  const input = col.querySelector(".slot-search");
-  input.addEventListener("input", (e) => {
+  col.querySelector(".slot-search").addEventListener("input", (e) => {
     currentSearchQueries[faction][pos] = e.target.value;
     renderColumns(faction);
   });
 
-  // Attach pick click listeners
   col.querySelectorAll(".candidate-row").forEach(row => {
     row.addEventListener("click", () => {
-      const f = row.dataset.faction;
-      const p = parseInt(row.dataset.pos);
-      const hId = parseInt(row.dataset.heroid);
-      engine.pickHero(f, p, hId);
+      engine.pickHero(row.dataset.faction, parseInt(row.dataset.pos), parseInt(row.dataset.heroid));
       renderAll();
     });
   });
@@ -123,12 +117,13 @@ function renderEmptyColumn(col, faction, pos) {
 function renderPickedColumn(col, faction, pos, heroId) {
   const hero = engine.heroMap.get(heroId);
   const currentTS = engine.calculateHeroTrueSynergy(heroId, pos, faction);
+  const logRows = engine.getPickedLog(heroId, pos, faction);
 
   col.innerHTML = `
-    <!-- Hero Portrait Header -->
+    <!-- Hero Portrait -->
     <div class="relative group">
       <img src="${hero.img}" class="w-full h-20 object-cover" alt="${hero.name}">
-      <button class="btn-unpick absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition" 
+      <button class="btn-unpick absolute top-1 right-1 bg-black/80 hover:bg-red-600 text-white rounded w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition" 
               data-faction="${faction}" data-pos="${pos}" title="Unpick hero">✕</button>
       <div class="absolute bottom-1 left-1.5 text-[11px] font-bold text-white drop-shadow">${hero.name}</div>
     </div>
@@ -145,70 +140,83 @@ function renderPickedColumn(col, faction, pos, heroId) {
       </div>
     </div>
 
-    <!-- Role Swap Recommendations -->
-    <div class="p-1.5 border-b border-stratzBorder bg-stratzBg/30 space-y-1">
-      <span class="text-[9px] uppercase font-bold tracking-widest text-gray-400 px-1">Role Swaps</span>
-      ${[1, 2, 3, 4, 5].filter(p => p !== pos).map(targetPos => `
-        <button class="btn-swap w-full flex items-center justify-between px-1.5 py-0.5 rounded text-[10px] text-gray-400 hover:text-white hover:bg-stratzBorder/50 transition"
-                data-faction="${faction}" data-from="${pos}" data-to="${targetPos}">
-          <div class="flex items-center space-x-1">
-            <span class="opacity-70">${ROLE_ICONS[targetPos]}</span>
-            <span>Pos ${targetPos}</span>
-          </div>
-          <span class="text-gold font-mono">⇄</span>
-        </button>
-      `).join("")}
+    <!-- Role Swap Rows with Deltas -->
+    <div class="p-1 border-b border-stratzBorder bg-stratzBg/30 space-y-0.5">
+      ${[1, 2, 3, 4, 5].filter(p => p !== pos).map(targetPos => {
+        const delta = engine.evaluateSwapDelta(faction, pos, targetPos);
+        const isPositive = delta > 0;
+        return `
+          <button class="btn-swap w-full flex items-center justify-between px-1.5 py-0.5 rounded text-[10px] ${isPositive ? "bg-radiant/10 text-radiant hover:bg-radiant/20" : "text-gray-400 hover:text-white hover:bg-stratzBorder/50"} transition"
+                  data-faction="${faction}" data-from="${pos}" data-to="${targetPos}">
+            <div class="flex items-center space-x-1">
+              <span class="opacity-70">${ROLE_ICONS[targetPos]}</span>
+              <span>Pos ${targetPos}</span>
+            </div>
+            <div class="flex items-center space-x-1 font-mono">
+              <span>${delta > 0 ? "+" : ""}${delta.toFixed(1)}</span>
+              <span>⇄</span>
+            </div>
+          </button>
+        `;
+      }).join("")}
     </div>
 
-    <!-- Picked Log Matrix Breakdown -->
-    <div class="flex-1 overflow-y-auto p-1.5 space-y-1 text-[11px]">
-      <span class="text-[9px] uppercase font-bold tracking-widest text-gray-400 px-1">Synergy Log</span>
-      <div class="bg-stratzBg/40 border border-stratzBorder rounded p-1.5 space-y-1">
-        <div class="flex items-center justify-between text-gray-300">
-          <span>Live Win Rate</span>
-          <span class="font-mono text-gray-200">${hero.liveWinRate}%</span>
-        </div>
-        <div class="flex items-center justify-between text-gray-400">
-          <span>Role Base Delta</span>
-          <span class="font-mono text-gold">${(hero.liveWinRate - 50).toFixed(1)}</span>
-        </div>
-      </div>
+    <!-- 10-Row Picked Log Matrix (Matching Screenshot) -->
+    <div class="flex-1 overflow-y-auto p-1 space-y-0.5 text-[10px] font-mono">
+      ${logRows.map(row => {
+        if (!row.hero) {
+          return `
+            <div class="flex items-center justify-between px-1.5 py-0.5 text-gray-600 opacity-40">
+              <div class="w-4 h-4 flex items-center justify-center">${ROLE_ICONS[row.pos]}</div>
+              <span>-</span>
+            </div>
+          `;
+        }
+        return `
+          <div class="flex items-center justify-between px-1.5 py-0.5 rounded ${row.isSelf ? "bg-stratzBorder/40" : ""}">
+            <div class="flex items-center space-x-1.5 overflow-hidden">
+              <img src="${row.hero.img}" class="w-4 h-3 rounded object-cover" alt="">
+              <span class="truncate text-gray-300 ${row.isSelf ? "font-bold text-white" : ""}">${row.hero.name}</span>
+            </div>
+            <span class="${row.value > 0 ? "text-radiant font-bold" : row.value < 0 ? "text-red-400 font-bold" : "text-gray-400"}">
+              ${row.value > 0 ? "+" : ""}${row.value.toFixed(1)}
+            </span>
+          </div>
+        `;
+      }).join("")}
     </div>
   `;
 
-  // Attach unpick listener
   col.querySelector(".btn-unpick").addEventListener("click", () => {
     engine.unpickHero(faction, pos);
     renderAll();
   });
 
-  // Attach swap listeners
   col.querySelectorAll(".btn-swap").forEach(btn => {
     btn.addEventListener("click", () => {
-      const f = btn.dataset.faction;
-      const from = parseInt(btn.dataset.from);
-      const to = parseInt(btn.dataset.to);
-      engine.swapHeroes(f, from, to);
+      engine.swapHeroes(btn.dataset.faction, parseInt(btn.dataset.from), parseInt(btn.dataset.to));
       renderAll();
     });
   });
 }
 
 function setupEventListeners() {
-  // Reset Draft
   document.getElementById("btnResetDraft").addEventListener("click", () => {
     engine.resetDraft();
     renderAll();
   });
 
-  // Rank Selector Change
   document.getElementById("rankSelector").addEventListener("change", async (e) => {
     const updatedHeroes = await fetchLiveHeroStats(e.target.value);
     engine.setHeroes(updatedHeroes);
     renderAll();
   });
 
-  // Bias Modal Open/Close
+  // Ban Modals
+  document.getElementById("btnRadiantBans").addEventListener("click", () => openBanModal("radiant"));
+  document.getElementById("btnDireBans").addEventListener("click", () => openBanModal("dire"));
+
+  // Bias Modal
   const biasModal = document.getElementById("biasModal");
   document.getElementById("btnOpenBiasModal").addEventListener("click", () => {
     renderBiasModal();
@@ -218,6 +226,65 @@ function setupEventListeners() {
     biasModal.classList.add("hidden");
     renderAll();
   });
+}
+
+function openBanModal(faction) {
+  currentBanFaction = faction;
+  let banModal = document.getElementById("banModal");
+  if (!banModal) {
+    banModal = document.createElement("div");
+    banModal.id = "banModal";
+    banModal.className = "fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center";
+    banModal.innerHTML = `
+      <div class="bg-stratzCard border border-stratzBorder rounded-xl max-w-2xl w-full p-6 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-stratzBorder pb-3 mb-4">
+          <h3 id="banModalTitle" class="text-base font-bold text-white">Select Bans</h3>
+          <button id="btnCloseBanModal" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
+        </div>
+        <input type="text" id="banSearchInput" placeholder="Filter hero..." class="w-full bg-stratzBg border border-stratzBorder rounded px-3 py-1.5 text-xs text-white focus:outline-none mb-3">
+        <div id="banGrid" class="grid grid-cols-6 gap-2 max-h-96 overflow-y-auto"></div>
+      </div>
+    `;
+    document.body.appendChild(banModal);
+
+    document.getElementById("btnCloseBanModal").addEventListener("click", () => {
+      banModal.classList.add("hidden");
+      renderAll();
+    });
+  }
+
+  document.getElementById("banModalTitle").textContent = `Select Bans for ${faction.toUpperCase()}`;
+  banModal.classList.remove("hidden");
+  renderBanGrid();
+}
+
+function renderBanGrid() {
+  const container = document.getElementById("banGrid");
+  const banSet = currentBanFaction === "radiant" ? engine.radiantBans : engine.direBans;
+  const query = (document.getElementById("banSearchInput").value || "").toLowerCase();
+
+  container.innerHTML = engine.heroes
+    .filter(h => h.name.toLowerCase().includes(query))
+    .map(hero => {
+      const isBanned = banSet.has(hero.id);
+      return `
+        <div class="ban-hero-item relative rounded overflow-hidden cursor-pointer border ${isBanned ? "border-red-500 opacity-60 grayscale" : "border-stratzBorder hover:border-gold"} transition"
+             data-heroid="${hero.id}">
+          <img src="${hero.img}" class="w-full h-12 object-cover" alt="${hero.name}">
+          ${isBanned ? `<span class="absolute inset-0 flex items-center justify-center text-red-500 font-black text-xl">🚫</span>` : ""}
+          <div class="text-[9px] text-center truncate px-1 bg-black/80 text-gray-300">${hero.name}</div>
+        </div>
+      `;
+    }).join("");
+
+  container.querySelectorAll(".ban-hero-item").forEach(item => {
+    item.addEventListener("click", () => {
+      engine.toggleBan(currentBanFaction, parseInt(item.dataset.heroid));
+      renderBanGrid();
+    });
+  });
+
+  document.getElementById("banSearchInput").oninput = renderBanGrid;
 }
 
 function renderBiasModal() {
@@ -247,12 +314,12 @@ function renderBiasModal() {
           <img src="${hero.img}" class="w-8 h-5 object-cover rounded" alt="${hero.name}">
           <span class="font-medium text-gray-200">${hero.name}</span>
         </div>
-        <div class="flex items-center space-x-3">
-          <button class="btn-preset bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="-20">Never Play (-20)</button>
+        <div class="flex items-center space-x-2">
+          <button class="btn-preset bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="-20">Never (-20)</button>
           <button class="btn-preset bg-stratzBorder hover:bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="0">Reset (0)</button>
           <button class="btn-preset bg-radiant/20 hover:bg-radiant/30 text-radiant px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="5">Comfort (+5)</button>
           <button class="btn-preset bg-amber-500/20 hover:bg-amber-500/30 text-gold px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="10">Main (+10)</button>
-          <span class="w-10 text-right font-mono font-bold ${currentBias > 0 ? "text-radiant" : currentBias < 0 ? "text-red-400" : "text-gray-400"}">
+          <span class="w-8 text-right font-mono font-bold ${currentBias > 0 ? "text-radiant" : currentBias < 0 ? "text-red-400" : "text-gray-400"}">
             ${currentBias > 0 ? "+" : ""}${currentBias}
           </span>
         </div>
@@ -260,9 +327,7 @@ function renderBiasModal() {
 
       row.querySelectorAll(".btn-preset").forEach(btn => {
         btn.addEventListener("click", () => {
-          const hId = parseInt(btn.dataset.heroid);
-          const val = parseFloat(btn.dataset.val);
-          engine.saveBias(hId, val);
+          engine.saveBias(parseInt(btn.dataset.heroid), parseFloat(btn.dataset.val));
           drawRows(document.getElementById("biasSearchInput").value);
         });
       });
@@ -272,11 +337,7 @@ function renderBiasModal() {
   }
 
   drawRows();
-
-  document.getElementById("biasSearchInput").addEventListener("input", (e) => {
-    drawRows(e.target.value);
-  });
+  document.getElementById("biasSearchInput").addEventListener("input", (e) => drawRows(e.target.value));
 }
 
-// Boot up
 window.addEventListener("DOMContentLoaded", init);
