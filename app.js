@@ -1,20 +1,35 @@
 import { fetchLiveHeroStats } from "./api.js";
-import { ROLE_ICONS, ROLE_NAMES } from "./heroes.js";
+import { HEROES, ROLE_ICONS, ROLE_NAMES } from "./heroes.js";
 import { RoshEngine } from "./engine.js";
 
-let engine = null;
-let currentSearchQueries = { radiant: {}, dire: {} };
-let currentBanFaction = null;
+// STRATZ-style SVG Swap Icon (Two opposing arrows)
+const SWAP_ICON = `
+  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <path d="M7 16V4m0 0L3 8m4-4l4 4m10 4v12m0 0l4-4m-4 4l-4-4"/>
+  </svg>
+`;
 
-async function init() {
+let engine = new RoshEngine(HEROES);
+let currentSearchQueries = { radiant: {}, dire: {} };
+let currentBanFaction = "radiant";
+
+function init() {
+  // 1. Immediately setup buttons and render default data so UI is interactive right away
+  setupEventListeners();
+  renderAll();
+
+  // 2. Fetch live Dota 2 stats in background and seamlessly update win rates
   const rankSelect = document.getElementById("rankSelector");
   const initialRank = rankSelect ? rankSelect.value : "LEGEND";
 
-  const heroes = await fetchLiveHeroStats(initialRank);
-  engine = new RoshEngine(heroes);
-
-  setupEventListeners();
-  renderAll();
+  fetchLiveHeroStats(initialRank).then(liveHeroes => {
+    if (liveHeroes && liveHeroes.length > 0) {
+      engine.setHeroes(liveHeroes);
+      renderAll();
+    }
+  }).catch(err => {
+    console.log("Using cached heroes roster:", err);
+  });
 }
 
 function renderAll() {
@@ -79,7 +94,7 @@ function renderEmptyColumn(col, faction, pos) {
         data-faction="${faction}" data-pos="${pos}">
     </div>
 
-    <!-- Recommendation Rows -->
+    <!-- Scrollable Candidate Recommendation List -->
     <div class="flex-1 overflow-y-auto p-1.5 space-y-1">
       ${candidates.slice(0, 40).map(({ hero, rawTS, bias, biasedScore }) => `
         <div class="candidate-row group flex items-center justify-between p-1 rounded hover:bg-stratzBorder/60 cursor-pointer transition border border-transparent hover:border-stratzBorder"
@@ -102,6 +117,7 @@ function renderEmptyColumn(col, faction, pos) {
   `;
 
   col.querySelector(".slot-search").addEventListener("input", (e) => {
+    if (!currentSearchQueries[faction]) currentSearchQueries[faction] = {};
     currentSearchQueries[faction][pos] = e.target.value;
     renderColumns(faction);
   });
@@ -123,7 +139,7 @@ function renderPickedColumn(col, faction, pos, heroId) {
     <!-- Hero Portrait -->
     <div class="relative group">
       <img src="${hero.img}" class="w-full h-20 object-cover" alt="${hero.name}">
-      <button class="btn-unpick absolute top-1 right-1 bg-black/80 hover:bg-red-600 text-white rounded w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition" 
+      <button class="btn-unpick absolute top-1 right-1 bg-black/80 hover:bg-red-600 text-white rounded w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition cursor-pointer" 
               data-faction="${faction}" data-pos="${pos}" title="Unpick hero">✕</button>
       <div class="absolute bottom-1 left-1.5 text-[11px] font-bold text-white drop-shadow">${hero.name}</div>
     </div>
@@ -140,13 +156,13 @@ function renderPickedColumn(col, faction, pos, heroId) {
       </div>
     </div>
 
-    <!-- Role Swap Rows with Deltas -->
+    <!-- Role Swap Rows with Deltas and SVG Icons -->
     <div class="p-1 border-b border-stratzBorder bg-stratzBg/30 space-y-0.5">
       ${[1, 2, 3, 4, 5].filter(p => p !== pos).map(targetPos => {
         const delta = engine.evaluateSwapDelta(faction, pos, targetPos);
         const isPositive = delta > 0;
         return `
-          <button class="btn-swap w-full flex items-center justify-between px-1.5 py-0.5 rounded text-[10px] ${isPositive ? "bg-radiant/10 text-radiant hover:bg-radiant/20" : "text-gray-400 hover:text-white hover:bg-stratzBorder/50"} transition"
+          <button class="btn-swap w-full flex items-center justify-between px-1.5 py-0.5 rounded text-[10px] ${isPositive ? "bg-radiant/10 text-radiant hover:bg-radiant/20" : "text-gray-400 hover:text-white hover:bg-stratzBorder/50"} transition cursor-pointer"
                   data-faction="${faction}" data-from="${pos}" data-to="${targetPos}">
             <div class="flex items-center space-x-1">
               <span class="opacity-70">${ROLE_ICONS[targetPos]}</span>
@@ -154,14 +170,14 @@ function renderPickedColumn(col, faction, pos, heroId) {
             </div>
             <div class="flex items-center space-x-1 font-mono">
               <span>${delta > 0 ? "+" : ""}${delta.toFixed(1)}</span>
-              <span>⇄</span>
+              <span>${SWAP_ICON}</span>
             </div>
           </button>
         `;
       }).join("")}
     </div>
 
-    <!-- 10-Row Picked Log Matrix (Matching Screenshot) -->
+    <!-- 10-Row Picked Log Matrix -->
     <div class="flex-1 overflow-y-auto p-1 space-y-0.5 text-[10px] font-mono">
       ${logRows.map(row => {
         if (!row.hero) {
@@ -201,20 +217,25 @@ function renderPickedColumn(col, faction, pos, heroId) {
 }
 
 function setupEventListeners() {
+  // Reset Draft
   document.getElementById("btnResetDraft").addEventListener("click", () => {
     engine.resetDraft();
     renderAll();
   });
 
+  // Rank Selector
   document.getElementById("rankSelector").addEventListener("change", async (e) => {
     const updatedHeroes = await fetchLiveHeroStats(e.target.value);
-    engine.setHeroes(updatedHeroes);
-    renderAll();
+    if (updatedHeroes && updatedHeroes.length > 0) {
+      engine.setHeroes(updatedHeroes);
+      renderAll();
+    }
   });
 
   // Ban Modals
   document.getElementById("btnRadiantBans").addEventListener("click", () => openBanModal("radiant"));
   document.getElementById("btnDireBans").addEventListener("click", () => openBanModal("dire"));
+  document.getElementById("btnCloseBanModal").addEventListener("click", closeBanModal);
 
   // Bias Modal
   const biasModal = document.getElementById("biasModal");
@@ -230,45 +251,29 @@ function setupEventListeners() {
 
 function openBanModal(faction) {
   currentBanFaction = faction;
-  let banModal = document.getElementById("banModal");
-  if (!banModal) {
-    banModal = document.createElement("div");
-    banModal.id = "banModal";
-    banModal.className = "fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center";
-    banModal.innerHTML = `
-      <div class="bg-stratzCard border border-stratzBorder rounded-xl max-w-2xl w-full p-6 shadow-2xl">
-        <div class="flex items-center justify-between border-b border-stratzBorder pb-3 mb-4">
-          <h3 id="banModalTitle" class="text-base font-bold text-white">Select Bans</h3>
-          <button id="btnCloseBanModal" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
-        </div>
-        <input type="text" id="banSearchInput" placeholder="Filter hero..." class="w-full bg-stratzBg border border-stratzBorder rounded px-3 py-1.5 text-xs text-white focus:outline-none mb-3">
-        <div id="banGrid" class="grid grid-cols-6 gap-2 max-h-96 overflow-y-auto"></div>
-      </div>
-    `;
-    document.body.appendChild(banModal);
-
-    document.getElementById("btnCloseBanModal").addEventListener("click", () => {
-      banModal.classList.add("hidden");
-      renderAll();
-    });
-  }
-
+  const modal = document.getElementById("banModal");
   document.getElementById("banModalTitle").textContent = `Select Bans for ${faction.toUpperCase()}`;
-  banModal.classList.remove("hidden");
+  modal.classList.remove("hidden");
   renderBanGrid();
+}
+
+function closeBanModal() {
+  document.getElementById("banModal").classList.add("hidden");
+  renderAll();
 }
 
 function renderBanGrid() {
   const container = document.getElementById("banGrid");
   const banSet = currentBanFaction === "radiant" ? engine.radiantBans : engine.direBans;
-  const query = (document.getElementById("banSearchInput").value || "").toLowerCase();
+  const searchInput = document.getElementById("banSearchInput");
+  const query = (searchInput ? searchInput.value : "").toLowerCase();
 
   container.innerHTML = engine.heroes
     .filter(h => h.name.toLowerCase().includes(query))
     .map(hero => {
       const isBanned = banSet.has(hero.id);
       return `
-        <div class="ban-hero-item relative rounded overflow-hidden cursor-pointer border ${isBanned ? "border-red-500 opacity-60 grayscale" : "border-stratzBorder hover:border-gold"} transition"
+        <div class="ban-hero-item relative rounded overflow-hidden cursor-pointer border ${isBanned ? "border-red-500 opacity-50 grayscale" : "border-stratzBorder hover:border-gold"} transition"
              data-heroid="${hero.id}">
           <img src="${hero.img}" class="w-full h-12 object-cover" alt="${hero.name}">
           ${isBanned ? `<span class="absolute inset-0 flex items-center justify-center text-red-500 font-black text-xl">🚫</span>` : ""}
@@ -284,7 +289,7 @@ function renderBanGrid() {
     });
   });
 
-  document.getElementById("banSearchInput").oninput = renderBanGrid;
+  searchInput.oninput = renderBanGrid;
 }
 
 function renderBiasModal() {
@@ -315,10 +320,10 @@ function renderBiasModal() {
           <span class="font-medium text-gray-200">${hero.name}</span>
         </div>
         <div class="flex items-center space-x-2">
-          <button class="btn-preset bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="-20">Never (-20)</button>
-          <button class="btn-preset bg-stratzBorder hover:bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="0">Reset (0)</button>
-          <button class="btn-preset bg-radiant/20 hover:bg-radiant/30 text-radiant px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="5">Comfort (+5)</button>
-          <button class="btn-preset bg-amber-500/20 hover:bg-amber-500/30 text-gold px-2 py-0.5 rounded text-[10px]" data-heroid="${hero.id}" data-val="10">Main (+10)</button>
+          <button class="btn-preset bg-red-500/20 hover:bg-red-500/30 text-red-400 px-2 py-0.5 rounded text-[10px] cursor-pointer" data-heroid="${hero.id}" data-val="-20">Never (-20)</button>
+          <button class="btn-preset bg-stratzBorder hover:bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-[10px] cursor-pointer" data-heroid="${hero.id}" data-val="0">Reset (0)</button>
+          <button class="btn-preset bg-radiant/20 hover:bg-radiant/30 text-radiant px-2 py-0.5 rounded text-[10px] cursor-pointer" data-heroid="${hero.id}" data-val="5">Comfort (+5)</button>
+          <button class="btn-preset bg-amber-500/20 hover:bg-amber-500/30 text-gold px-2 py-0.5 rounded text-[10px] cursor-pointer" data-heroid="${hero.id}" data-val="10">Main (+10)</button>
           <span class="w-8 text-right font-mono font-bold ${currentBias > 0 ? "text-radiant" : currentBias < 0 ? "text-red-400" : "text-gray-400"}">
             ${currentBias > 0 ? "+" : ""}${currentBias}
           </span>
@@ -340,4 +345,8 @@ function renderBiasModal() {
   document.getElementById("biasSearchInput").addEventListener("input", (e) => drawRows(e.target.value));
 }
 
+// Start immediately
 window.addEventListener("DOMContentLoaded", init);
+if (document.readyState === "complete" || document.readyState === "interactive") {
+  init();
+}
