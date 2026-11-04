@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ROSH Draft Assistant - Bias Edition</title>
+  <title>ROSH Draft Assistant - STRATZ Clone & Bias Engine</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -12,7 +12,8 @@
           colors: {
             stratzBg: '#090c10',
             stratzCard: '#131822',
-            stratzBorder: '#21293a',
+            stratzSubCard: '#181f2c',
+            stratzBorder: '#232c3d',
             radiant: '#00d68f',
             dire: '#ff3d71',
             gold: '#f59e0b'
@@ -21,21 +22,26 @@
       }
     }
   </script>
+  <style>
+    /* Custom scrollbars matching STRATZ */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #090c10; }
+    ::-webkit-scrollbar-thumb { background: #232c3d; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3b475e; }
+  </style>
 </head>
-<body class="bg-stratzBg text-gray-200 min-h-screen flex flex-col font-sans select-none">
+<body class="bg-stratzBg text-gray-200 min-h-screen flex flex-col font-sans select-none overflow-x-auto">
 
-  <!-- Top Navigation & Control Bar -->
-  <header class="bg-stratzCard border-b border-stratzBorder px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+  <!-- Minimal Utilities Header -->
+  <header class="bg-stratzCard/90 border-b border-stratzBorder px-6 py-2.5 flex items-center justify-between text-xs min-w-[1340px]">
     <div class="flex items-center space-x-4">
       <div class="flex items-center space-x-2">
-        <span class="text-2xl font-black tracking-wider text-gold">ROSH</span>
-        <span class="text-[10px] bg-stratzBorder text-gray-400 px-2 py-0.5 rounded font-mono uppercase tracking-widest">Custom Bias</span>
+        <span class="text-xl font-black text-gold tracking-wider">ROSH</span>
+        <span class="text-[10px] bg-stratzBorder text-gray-300 px-2 py-0.5 rounded font-mono uppercase">Bias Engine</span>
       </div>
-
-      <!-- Match Rank Selector -->
-      <div class="flex items-center space-x-2 text-xs">
+      <div class="flex items-center space-x-2">
         <span class="text-gray-400">Rank:</span>
-        <select id="rankSelector" class="bg-stratzBg border border-stratzBorder text-gray-200 rounded px-2.5 py-1 focus:outline-none focus:border-gold">
+        <select id="rankSelector" class="bg-stratzBg border border-stratzBorder text-gray-200 rounded px-2 py-1 text-xs focus:outline-none">
           <option value="DIVINE_IMMORTAL">Divine & Immortal</option>
           <option value="ANCIENT">Ancient</option>
           <option value="LEGEND" selected>Legend</option>
@@ -44,129 +50,104 @@
           <option value="GUARDIAN_HERALD">Guardian & Herald</option>
         </select>
       </div>
-
-      <!-- Match ID Loader -->
       <div class="flex items-center space-x-1">
-        <input id="matchIdInput" type="text" placeholder="Match ID..." class="bg-stratzBg border border-stratzBorder text-xs text-gray-200 rounded-l px-2.5 py-1 focus:outline-none focus:border-gold w-28">
+        <input id="matchIdInput" type="text" placeholder="Match ID..." class="bg-stratzBg border border-stratzBorder text-xs text-gray-200 rounded-l px-2.5 py-1 focus:outline-none w-28">
         <button id="btnLoadMatch" class="bg-stratzBorder hover:bg-gray-700 text-xs px-2.5 py-1 rounded-r font-medium text-gray-300">Load</button>
       </div>
     </div>
 
-    <!-- Action Buttons -->
     <div class="flex items-center space-x-3">
-      <button id="btnOpenBiasModal" class="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/40 hover:bg-amber-500/20 text-gold text-xs px-3 py-1.5 rounded font-semibold transition">
+      <button id="btnOpenBiasModal" class="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/40 hover:bg-amber-500/20 text-gold px-3 py-1.5 rounded font-semibold transition">
         <span>⚙️ My Hero Biases</span>
       </button>
-      <button id="btnResetDraft" class="bg-stratzBorder hover:bg-red-500/20 hover:border-red-500/40 border border-transparent text-gray-300 hover:text-red-400 text-xs px-3 py-1.5 rounded transition font-medium">
-        Reset Draft
+      <button id="btnResetDraft" class="bg-stratzBorder hover:bg-red-500/20 border border-transparent text-gray-300 hover:text-red-400 px-3 py-1.5 rounded transition font-medium">
+        Reset
       </button>
     </div>
   </header>
 
-  <!-- TrueSynergy Scoreboard Header -->
-  <section class="bg-stratzCard/60 border-b border-stratzBorder px-6 py-4">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
-      <!-- Radiant TrueSynergy -->
-      <div class="flex items-center space-x-4">
-        <div>
-          <span class="text-xs font-bold uppercase tracking-wider text-radiant">Radiant Team</span>
-          <div class="flex items-baseline space-x-2">
-            <span id="radiantCurrentTS" class="text-2xl font-black text-white">0.0</span>
-            <span class="text-xs text-gray-400">Current TS</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Center Differential Badge -->
-      <div class="text-center px-6 py-2 bg-stratzBg border border-stratzBorder rounded-lg">
-        <span class="text-[10px] uppercase font-bold tracking-widest text-gray-400 block">TrueSynergy Differential</span>
-        <span id="tsDifferential" class="text-2xl font-black text-gold">0.0</span>
-      </div>
-
-      <!-- Dire TrueSynergy -->
-      <div class="flex items-center space-x-4 text-right">
-        <div>
-          <span class="text-xs font-bold uppercase tracking-wider text-dire">Dire Team</span>
-          <div class="flex items-baseline justify-end space-x-2">
-            <span id="direCurrentTS" class="text-2xl font-black text-white">0.0</span>
-            <span class="text-xs text-gray-400">Current TS</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Main Content Area: Draft Board + Recommendations -->
-  <main class="flex-1 max-w-7xl mx-auto w-full p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- Left & Center: Draft Board (8 Columns) -->
-    <div class="lg:col-span-8 flex flex-col gap-6">
-
-      <!-- Radiant 5 Slots -->
-      <div class="bg-stratzCard border border-stratzBorder rounded-xl p-4">
-        <h2 class="text-xs font-bold text-radiant uppercase tracking-wider mb-3 flex items-center justify-between">
-          <span>Radiant Picks</span>
-          <span class="text-[11px] text-gray-400 font-normal">Select a slot to pick for Radiant</span>
-        </h2>
-        <div id="radiantSlots" class="grid grid-cols-5 gap-3">
-          <!-- Populated dynamically via JS: Pos 1 to 5 -->
-        </div>
-      </div>
-
-      <!-- Dire 5 Slots -->
-      <div class="bg-stratzCard border border-stratzBorder rounded-xl p-4">
-        <h2 class="text-xs font-bold text-dire uppercase tracking-wider mb-3 flex items-center justify-between">
-          <span>Dire Picks</span>
-          <span class="text-[11px] text-gray-400 font-normal">Select a slot to pick for Dire</span>
-        </h2>
-        <div id="direSlots" class="grid grid-cols-5 gap-3">
-          <!-- Populated dynamically via JS: Pos 1 to 5 -->
-        </div>
-      </div>
-
-      <!-- Bans Section -->
-      <div class="bg-stratzCard/50 border border-stratzBorder/80 rounded-xl p-4">
-        <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Banned Heroes</h3>
-        <div id="bannedList" class="flex flex-wrap gap-2 text-xs text-gray-400">
-          <span class="text-gray-400 italic">No bans selected. Click a hero's ban button to add.</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right: Recommendation Column (4 Columns) -->
-    <aside class="lg:col-span-4 flex flex-col bg-stratzCard border border-stratzBorder rounded-xl overflow-hidden h-[750px]">
+  <!-- Faction Headers (Exact STRATZ layout) -->
+  <div class="px-6 py-3 border-b border-stratzBorder bg-stratzCard/40 min-w-[1340px]">
+    <div class="grid grid-cols-2 gap-8 max-w-[1600px] mx-auto">
       
-      <!-- Recommendations Header -->
-      <div class="p-4 border-b border-stratzBorder bg-stratzCard/90">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-white flex items-center space-x-1.5">
-            <span>Recommendations</span>
-            <span id="activeSlotBadge" class="text-[10px] bg-stratzBorder text-gold px-1.5 py-0.5 rounded uppercase">Pos 1</span>
-          </h3>
-          <span class="text-[10px] text-gray-400">Sorted by Biased Score</span>
+      <!-- Radiant Header -->
+      <div class="flex items-center justify-between bg-stratzCard/80 border border-stratzBorder/80 px-4 py-2.5 rounded-lg">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded bg-radiant/20 border border-radiant/40 flex items-center justify-center text-radiant font-black text-sm">🌳</div>
+          <span class="text-base font-bold text-white">Radiant</span>
+          <button id="btnRadiantBans" class="text-xs bg-stratzBorder hover:bg-gray-700 text-gray-300 px-2.5 py-1 rounded font-medium transition">Select Bans</button>
         </div>
-
-        <!-- Hero Search -->
-        <input id="heroSearch" type="text" placeholder="Search hero..." class="w-full bg-stratzBg border border-stratzBorder text-xs text-gray-200 rounded px-3 py-1.5 focus:outline-none focus:border-gold mb-2">
-
-        <!-- Position Qualification Filter -->
-        <div class="flex items-center justify-between text-[11px] text-gray-400 pt-1">
-          <span>Role Qualified Only</span>
-          <input type="checkbox" id="toggleQualifiedOnly" checked class="accent-amber-500 rounded cursor-pointer">
+        <div class="flex items-center space-x-4">
+          <div class="text-right">
+            <div class="text-[11px] text-gray-400 font-mono flex items-center justify-end space-x-1">
+              <span id="radiantOriginalTS">0.0</span>
+              <span>🔒</span>
+            </div>
+            <div id="radiantCurrentTS" class="text-lg font-black text-white leading-tight">0.0</div>
+          </div>
+          <div class="text-right border-l border-stratzBorder pl-4">
+            <span class="text-[10px] text-gray-400 block uppercase font-bold">Diff</span>
+            <span id="tsDifferential" class="text-lg font-black text-gold">+0.0</span>
+          </div>
         </div>
       </div>
 
-      <!-- Recommendation Hero List Container -->
-      <div id="recommendationList" class="flex-1 overflow-y-auto p-3 space-y-2">
-        <div class="text-center text-xs text-gray-400 py-8">Loading heroes and calculations...</div>
+      <!-- Dire Header -->
+      <div class="flex items-center justify-between bg-stratzCard/80 border border-stratzBorder/80 px-4 py-2.5 rounded-lg">
+        <div class="flex items-center space-x-4">
+          <div class="text-left">
+            <div class="text-[11px] text-gray-400 font-mono flex items-center space-x-1">
+              <span>🔒</span>
+              <span id="direOriginalTS">0.0</span>
+            </div>
+            <div id="direCurrentTS" class="text-lg font-black text-white leading-tight">0.0</div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button id="btnDireBans" class="text-xs bg-stratzBorder hover:bg-gray-700 text-gray-300 px-2.5 py-1 rounded font-medium transition">Select Bans</button>
+          <span class="text-base font-bold text-white">Dire</span>
+          <div class="w-8 h-8 rounded bg-dire/20 border border-dire/40 flex items-center justify-center text-dire font-black text-sm">🌋</div>
+        </div>
       </div>
-    </aside>
 
+    </div>
+  </div>
+
+  <!-- 10-Column ROSH Grid Container -->
+  <main class="flex-1 px-6 py-4 min-w-[1340px]">
+    <div class="grid grid-cols-2 gap-8 max-w-[1600px] mx-auto">
+      
+      <!-- Radiant 5 Columns -->
+      <div id="radiantColumns" class="grid grid-cols-5 gap-2.5">
+        <!-- Rendered via JS: Radiant Pos 1, 2, 3, 4, 5 -->
+      </div>
+
+      <!-- Dire 5 Columns -->
+      <div id="direColumns" class="grid grid-cols-5 gap-2.5">
+        <!-- Rendered via JS: Dire Pos 1, 2, 3, 4, 5 -->
+      </div>
+
+    </div>
   </main>
 
-  <footer class="bg-stratzCard border-t border-stratzBorder px-6 py-3 text-center text-xs text-gray-400">
-    ROSH Draft Assistant Clone • Enhanced with Personal Hero Bias
-  </footer>
+  <!-- Personal Bias Modal Placeholder -->
+  <div id="biasModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-stratzCard border border-stratzBorder rounded-xl max-w-2xl w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-stratzBorder pb-3 mb-4">
+        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+          <span>⚙️ Custom Hero Biases</span>
+          <span class="text-xs text-gold font-normal">(Personalize recommendations)</span>
+        </h3>
+        <button id="btnCloseBiasModal" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+      <p class="text-xs text-gray-400 mb-4">
+        Give positive points to heroes you master, and heavy negative points to heroes you never play. The ROSH engine will adapt all 10 recommendation columns accordingly.
+      </p>
+      <div id="biasHeroList" class="max-h-96 overflow-y-auto space-y-2 pr-2 text-xs">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
