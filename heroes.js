@@ -234,4 +234,8 @@ export const HEROES = [
   { id: 138, name: "Muerta", shortName: "muerta", defaultPos: 1, baseWinRate: 49.7 }
 ];
 
+HEROES.forEach(h => {
+  if (!h.img) h.img = getHeroImg(h.shortName);
+});
+
 export const HERO_MAP = new Map(HEROES.map(h => [h.id, h]));
