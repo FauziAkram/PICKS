@@ -1,4 +1,4 @@
-import { fetchLiveHeroStats } from "./api.js";
+import { fetchLiveHeroStats, fetchHeroMatchupData } from "./api.js";
 import { HEROES, ROLE_ICONS, ROLE_NAMES, heroMatchesQuery } from "./heroes.js";
 import { RoshEngine } from "./engine.js";
 
@@ -16,7 +16,6 @@ let activeRanks = new Set([1, 2, 3, 4, 5, 6, 7, 8]); // Default: All Ranks (Gene
 async function init() {
   setupEventListeners();
 
-  // Fetch 100% live match stats for selected ranks from OpenDota API
   const liveHeroes = await fetchLiveHeroStats(Array.from(activeRanks));
   if (liveHeroes && liveHeroes.length > 0) {
     engine.setHeroes(liveHeroes);
@@ -126,8 +125,17 @@ function updateCandidateList(container, faction, pos, query) {
   `).join("");
 
   container.querySelectorAll(".candidate-row").forEach(row => {
-    row.addEventListener("click", () => {
-      engine.pickHero(row.dataset.faction, parseInt(row.dataset.pos), parseInt(row.dataset.heroid));
+    row.addEventListener("click", async () => {
+      const f = row.dataset.faction;
+      const p = parseInt(row.dataset.pos);
+      const hId = parseInt(row.dataset.heroid);
+
+      engine.pickHero(f, p, hId);
+      renderAll();
+
+      // Fetch 100% empirical head-to-head match data for this hero in real time
+      const matchupData = await fetchHeroMatchupData(hId);
+      engine.setHeroMatchups(hId, matchupData);
       renderAll();
     });
   });
@@ -264,7 +272,6 @@ function setupRankButtons() {
 
       updateRankButtonStyles();
 
-      // Recalculate 100% live win rates instantly across selected ranks
       const updatedHeroes = await fetchLiveHeroStats(Array.from(activeRanks));
       if (updatedHeroes && updatedHeroes.length > 0) {
         engine.setHeroes(updatedHeroes);
@@ -375,13 +382,13 @@ function renderBiasModal() {
           <button class="btn-preset bg-stratzBorder hover:bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-[10px] cursor-pointer" data-heroid="${hero.id}" data-val="0">Reset (0)</button>
           <button class="btn-preset bg-radiant/20 hover:bg-radiant/30 text-radiant px-2 py-0.5 rounded text-[10px] cursor-pointer" data-heroid="${hero.id}" data-val="5">Comfort (+5)</button>
           <button class="btn-preset bg-amber-500/20 hover:bg-amber-500/30 text-gold px-2 py-0.5 rounded text-[10px] cursor-pointer" data-heroid="${hero.id}" data-val="10">Main (+10)</button>
-            <div class="flex items-center space-x-1 bg-stratzBg px-1.5 py-0.5 rounded border border-stratzBorder ml-1">
-              <button class="btn-step-down px-1 text-gray-400 hover:text-white font-bold cursor-pointer text-xs" title="Decrease by 1">▼</button>
-              <span class="w-7 text-center font-mono font-bold ${currentBias > 0 ? "text-radiant" : currentBias < 0 ? "text-red-400" : "text-gray-400"}">
-                ${currentBias > 0 ? "+" : ""}${currentBias}
-              </span>
-              <button class="btn-step-up px-1 text-gray-400 hover:text-white font-bold cursor-pointer text-xs" title="Increase by 1">▲</button>
-            </div>
+          <div class="flex items-center space-x-1 bg-stratzBg px-1.5 py-0.5 rounded border border-stratzBorder ml-1">
+            <button class="btn-step-down px-1 text-gray-400 hover:text-white font-bold cursor-pointer text-xs" title="Decrease by 1">▼</button>
+            <span class="w-7 text-center font-mono font-bold ${currentBias > 0 ? "text-radiant" : currentBias < 0 ? "text-red-400" : "text-gray-400"}">
+              ${currentBias > 0 ? "+" : ""}${currentBias}
+            </span>
+            <button class="btn-step-up px-1 text-gray-400 hover:text-white font-bold cursor-pointer text-xs" title="Increase by 1">▲</button>
+          </div>
         </div>
       `;
 
@@ -392,17 +399,17 @@ function renderBiasModal() {
         });
       });
 
-        row.querySelector(".btn-step-down").addEventListener("click", () => {
-          const nextVal = Math.max(-20, currentBias - 1);
-          engine.saveBias(hero.id, nextVal);
-          drawRows(document.getElementById("biasSearchInput").value);
-        });
+      row.querySelector(".btn-step-down").addEventListener("click", () => {
+        const nextVal = Math.max(-20, currentBias - 1);
+        engine.saveBias(hero.id, nextVal);
+        drawRows(document.getElementById("biasSearchInput").value);
+      });
 
-        row.querySelector(".btn-step-up").addEventListener("click", () => {
-          const nextVal = Math.min(20, currentBias + 1);
-          engine.saveBias(hero.id, nextVal);
-          drawRows(document.getElementById("biasSearchInput").value);
-        });
+      row.querySelector(".btn-step-up").addEventListener("click", () => {
+        const nextVal = Math.min(20, currentBias + 1);
+        engine.saveBias(hero.id, nextVal);
+        drawRows(document.getElementById("biasSearchInput").value);
+      });
 
       rowsContainer.appendChild(row);
     });
