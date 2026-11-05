@@ -243,10 +243,10 @@ function setupEventListeners() {
   const biasModal = document.getElementById("biasModal");
   document.getElementById("btnOpenBiasModal").addEventListener("click", () => {
     renderBiasModal();
-    biasModal.classList.remove("hidden");
+    biasModal.style.display = "flex";
   });
   document.getElementById("btnCloseBiasModal").addEventListener("click", () => {
-    biasModal.classList.add("hidden");
+    biasModal.style.display = "none";
     renderAll();
   });
 }
@@ -312,12 +312,12 @@ function openBanModal(faction) {
   currentBanFaction = faction;
   const modal = document.getElementById("banModal");
   document.getElementById("banModalTitle").textContent = `Select Bans for ${faction.toUpperCase()}`;
-  modal.classList.remove("hidden");
+  modal.style.display = "flex";
   renderBanGrid();
 }
 
 function closeBanModal() {
-  document.getElementById("banModal").classList.add("hidden");
+  document.getElementById("banModal").style.display = "none";
   renderAll();
 }
 
@@ -403,7 +403,4 @@ function renderBiasModal() {
   document.getElementById("biasSearchInput").addEventListener("input", (e) => drawRows(e.target.value));
 }
 
-window.addEventListener("DOMContentLoaded", init);
-if (document.readyState === "complete" || document.readyState === "interactive") {
-  init();
-}
+init();
