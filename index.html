@@ -32,40 +32,46 @@
 <body class="bg-stratzBg text-gray-200 min-h-screen flex flex-col font-sans select-none overflow-x-auto">
 
   <!-- Top Utilities Header -->
-  <header class="bg-stratzCard/90 border-b border-stratzBorder px-6 py-2.5 flex items-center justify-between text-xs min-w-[1340px]">
+  <header class="bg-stratzCard/95 border-b border-stratzBorder px-6 py-2.5 flex flex-wrap items-center justify-between text-xs min-w-[1340px] gap-4">
     <div class="flex items-center space-x-4">
       <div class="flex items-center space-x-2">
         <span class="text-xl font-black text-gold tracking-wider">ROSH</span>
         <span class="text-[10px] bg-stratzBorder text-gray-300 px-2 py-0.5 rounded font-mono uppercase">Bias Engine</span>
       </div>
-      <div class="flex items-center space-x-2">
-        <span class="text-gray-400">Rank:</span>
-        <select id="rankSelector" class="bg-stratzBg border border-stratzBorder text-gray-200 rounded px-2 py-1 text-xs focus:outline-none">
-          <option value="DIVINE_IMMORTAL">Divine & Immortal</option>
-          <option value="ANCIENT">Ancient</option>
-          <option value="LEGEND" selected>Legend</option>
-          <option value="ARCHON">Archon</option>
-          <option value="CRUSADER">Crusader</option>
-          <option value="GUARDIAN_HERALD">Guardian & Herald</option>
-        </select>
+
+      <!-- Multi-Rank Selection Grid -->
+      <div class="flex items-center space-x-1.5 bg-stratzBg/80 border border-stratzBorder p-1 rounded-lg">
+        <span class="text-gray-400 text-[11px] px-1 font-semibold">Ranks:</span>
+        <button id="btnRankAll" class="rank-btn px-2 py-0.5 rounded text-[10px] font-bold transition border border-gold bg-gold/20 text-gold" data-rank="all">ALL</button>
+        <button class="rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border border-stratzBorder bg-stratzBorder/50 text-gray-200" data-rank="1">Herald</button>
+        <button class="rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border border-stratzBorder bg-stratzBorder/50 text-gray-200" data-rank="2">Guardian</button>
+        <button class="rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border border-stratzBorder bg-stratzBorder/50 text-gray-200" data-rank="3">Crusader</button>
+        <button class="rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border border-stratzBorder bg-stratzBorder/50 text-gray-200" data-rank="4">Archon</button>
+        <button class="rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border border-stratzBorder bg-stratzBorder/50 text-gray-200" data-rank="5">Legend</button>
+        <button class="rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border border-stratzBorder bg-stratzBorder/50 text-gray-200" data-rank="6">Ancient</button>
+        <button class="rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border border-stratzBorder bg-stratzBorder/50 text-gray-200" data-rank="7">Divine</button>
+        <button class="rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border border-stratzBorder bg-stratzBorder/50 text-gray-200" data-rank="8">Immortal</button>
       </div>
+
+      <!-- Match ID Loader -->
       <div class="flex items-center space-x-1">
         <input id="matchIdInput" type="text" placeholder="Match ID..." class="bg-stratzBg border border-stratzBorder text-xs text-gray-200 rounded-l px-2.5 py-1 focus:outline-none w-28">
-        <button id="btnLoadMatch" class="bg-stratzBorder hover:bg-gray-700 text-xs px-2.5 py-1 rounded-r font-medium text-gray-300">Load</button>
+        <button id="btnLoadMatch" class="bg-stratzBorder hover:bg-gray-700 text-xs px-2.5 py-1 rounded-r font-medium text-gray-300 cursor-pointer">Load</button>
       </div>
     </div>
 
+    <!-- Actions -->
     <div class="flex items-center space-x-3">
-      <button id="btnOpenBiasModal" class="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/40 hover:bg-amber-500/20 text-gold px-3 py-1.5 rounded font-semibold transition">
+      <button id="btnOpenBiasModal" class="flex items-center space-x-1.5 bg-amber-500/10 border border-amber-500/40 hover:bg-amber-500/20 text-gold px-3 py-1.5 rounded font-semibold transition cursor-pointer">
         <span>⚙️ My Hero Biases</span>
       </button>
-      <button id="btnResetDraft" class="bg-stratzBorder hover:bg-red-500/20 border border-transparent text-gray-300 hover:text-red-400 px-3 py-1.5 rounded transition font-medium">
+      <button id="btnResetDraft" class="bg-stratzBorder hover:bg-red-500/20 border border-transparent text-gray-300 hover:text-red-400 px-3 py-1.5 rounded transition font-medium cursor-pointer">
         Reset
       </button>
     </div>
   </header>
 
-  <!-- Faction Headers (Exact STRATZ layout) -->
+  <!-- Faction Headers -->
   <div class="px-6 py-3 border-b border-stratzBorder bg-stratzCard/40 min-w-[1340px]">
     <div class="grid grid-cols-2 gap-8 max-w-[1600px] mx-auto">
       
@@ -153,6 +159,6 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=3.0"></script>
+  <script type="module" src="app.js?v=4.0"></script>
 </body>
 </html>
