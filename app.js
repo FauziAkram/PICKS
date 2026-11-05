@@ -40,9 +40,18 @@ function renderScores() {
   document.getElementById("direCurrentTS").textContent = scores.dire.toFixed(1);
 
   const diffEl = document.getElementById("tsDifferential");
-  const sign = scores.diff > 0 ? "+" : "";
-  diffEl.textContent = `${sign}${scores.diff.toFixed(1)}`;
-  diffEl.className = `text-lg font-black ${scores.diff >= 0 ? "text-gold" : "text-dire"}`;
+  const absDiff = Math.abs(scores.diff).toFixed(1);
+
+  if (scores.diff > 0) {
+    diffEl.textContent = `+${absDiff} RAD`;
+    diffEl.className = "text-lg font-black text-gold";
+  } else if (scores.diff < 0) {
+    diffEl.textContent = `+${absDiff} DIRE`;
+    diffEl.className = "text-lg font-black text-dire";
+  } else {
+    diffEl.textContent = "EVEN 0.0";
+    diffEl.className = "text-lg font-black text-gray-400";
+  }
 }
 
 function renderColumns(faction) {
@@ -133,7 +142,7 @@ function updateCandidateList(container, faction, pos, query) {
       engine.pickHero(f, p, hId);
       renderAll();
 
-      // Fetch 100% empirical head-to-head match data for this hero in real time
+      // Fetch 100% empirical head-to-head match data for this hero
       const matchupData = await fetchHeroMatchupData(hId);
       engine.setHeroMatchups(hId, matchupData);
       renderAll();
