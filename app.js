@@ -2,7 +2,6 @@ import { fetchLiveHeroStats } from "./api.js";
 import { HEROES, ROLE_ICONS, ROLE_NAMES, heroMatchesQuery } from "./heroes.js";
 import { RoshEngine } from "./engine.js";
 
-// STRATZ-style SVG Swap Icon (Two opposing arrows)
 const SWAP_ICON = `
   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
     <path d="M7 16V4m0 0L3 8m4-4l4 4m10 4v12m0 0l4-4m-4 4l-4-4"/>
@@ -14,19 +13,16 @@ let currentSearchQueries = { radiant: {}, dire: {} };
 let currentBanFaction = "radiant";
 let activeRanks = new Set([1, 2, 3, 4, 5, 6, 7, 8]); // Default: All Ranks (General)
 
-function init() {
+async function init() {
   setupEventListeners();
-  renderAll();
 
-  // Load live stats across all ranks
-  fetchLiveHeroStats(Array.from(activeRanks)).then(liveHeroes => {
-    if (liveHeroes && liveHeroes.length > 0) {
-      engine.setHeroes(liveHeroes);
-      renderAll();
-    }
-  }).catch(err => {
-    console.log("Using cached heroes roster:", err);
-  });
+  // Fetch 100% live match stats for selected ranks from OpenDota API
+  const liveHeroes = await fetchLiveHeroStats(Array.from(activeRanks));
+  if (liveHeroes && liveHeroes.length > 0) {
+    engine.setHeroes(liveHeroes);
+  }
+
+  renderAll();
 }
 
 function renderAll() {
@@ -104,7 +100,6 @@ function renderEmptyColumn(col, faction, pos) {
     if (!currentSearchQueries[faction]) currentSearchQueries[faction] = {};
     currentSearchQueries[faction][pos] = query;
 
-    // PRESERVE FOCUS: Only update the candidate list rows, never destroy the input!
     updateCandidateList(listContainer, faction, pos, query);
   });
 }
@@ -225,28 +220,24 @@ function renderPickedColumn(col, faction, pos, heroId) {
 }
 
 function setupEventListeners() {
-  // Reset Draft
-  document.getElementById("btnResetDraft").addEventListener("click", () => {
+  document.getElementById("btnResetDraft")?.addEventListener("click", () => {
     engine.resetDraft();
     renderAll();
   });
 
-  // Rank Buttons
   setupRankButtons();
 
-  // Ban Modals
-  document.getElementById("btnRadiantBans").addEventListener("click", () => openBanModal("radiant"));
-  document.getElementById("btnDireBans").addEventListener("click", () => openBanModal("dire"));
-  document.getElementById("btnCloseBanModal").addEventListener("click", closeBanModal);
+  document.getElementById("btnRadiantBans")?.addEventListener("click", () => openBanModal("radiant"));
+  document.getElementById("btnDireBans")?.addEventListener("click", () => openBanModal("dire"));
+  document.getElementById("btnCloseBanModal")?.addEventListener("click", closeBanModal);
 
-  // Bias Modal
   const biasModal = document.getElementById("biasModal");
-  document.getElementById("btnOpenBiasModal").addEventListener("click", () => {
+  document.getElementById("btnOpenBiasModal")?.addEventListener("click", () => {
     renderBiasModal();
-    biasModal.style.display = "flex";
+    if (biasModal) biasModal.style.display = "flex";
   });
-  document.getElementById("btnCloseBiasModal").addEventListener("click", () => {
-    biasModal.style.display = "none";
+  document.getElementById("btnCloseBiasModal")?.addEventListener("click", () => {
+    if (biasModal) biasModal.style.display = "none";
     renderAll();
   });
 }
@@ -262,7 +253,6 @@ function setupRankButtons() {
         activeRanks = new Set([1, 2, 3, 4, 5, 6, 7, 8]);
       } else {
         const num = parseInt(rankVal);
-        // If coming from ALL mode, isolate the clicked rank directly
         if (activeRanks.size === 8) {
           activeRanks = new Set([num]);
         } else if (activeRanks.has(num)) {
@@ -274,7 +264,7 @@ function setupRankButtons() {
 
       updateRankButtonStyles();
 
-      // Recalculate live stats instantly across active ranks
+      // Recalculate 100% live win rates instantly across selected ranks
       const updatedHeroes = await fetchLiveHeroStats(Array.from(activeRanks));
       if (updatedHeroes && updatedHeroes.length > 0) {
         engine.setHeroes(updatedHeroes);
@@ -311,18 +301,21 @@ function updateRankButtonStyles() {
 function openBanModal(faction) {
   currentBanFaction = faction;
   const modal = document.getElementById("banModal");
+  if (!modal) return;
   document.getElementById("banModalTitle").textContent = `Select Bans for ${faction.toUpperCase()}`;
   modal.style.display = "flex";
   renderBanGrid();
 }
 
 function closeBanModal() {
-  document.getElementById("banModal").style.display = "none";
+  const modal = document.getElementById("banModal");
+  if (modal) modal.style.display = "none";
   renderAll();
 }
 
 function renderBanGrid() {
   const container = document.getElementById("banGrid");
+  if (!container) return;
   const banSet = currentBanFaction === "radiant" ? engine.radiantBans : engine.direBans;
   const searchInput = document.getElementById("banSearchInput");
   const query = (searchInput ? searchInput.value : "").toLowerCase();
