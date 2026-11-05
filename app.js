@@ -2,6 +2,7 @@ import { fetchLiveHeroStats } from "./api.js";
 import { HEROES, ROLE_ICONS, ROLE_NAMES, heroMatchesQuery } from "./heroes.js";
 import { RoshEngine } from "./engine.js";
 
+// STRATZ-style SVG Swap Icon (Two opposing arrows)
 const SWAP_ICON = `
   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
     <path d="M7 16V4m0 0L3 8m4-4l4 4m10 4v12m0 0l4-4m-4 4l-4-4"/>
@@ -23,6 +24,8 @@ function init() {
       engine.setHeroes(liveHeroes);
       renderAll();
     }
+  }).catch(err => {
+    console.log("Using cached heroes roster:", err);
   });
 }
 
@@ -101,7 +104,7 @@ function renderEmptyColumn(col, faction, pos) {
     if (!currentSearchQueries[faction]) currentSearchQueries[faction] = {};
     currentSearchQueries[faction][pos] = query;
 
-    // PRESERVE FOCUS: Only update the candidate list, DO NOT re-render the input!
+    // PRESERVE FOCUS: Only update the candidate list rows, never destroy the input!
     updateCandidateList(listContainer, faction, pos, query);
   });
 }
@@ -228,7 +231,7 @@ function setupEventListeners() {
     renderAll();
   });
 
-  // Rank Selector Buttons
+  // Rank Buttons
   setupRankButtons();
 
   // Ban Modals
@@ -259,7 +262,7 @@ function setupRankButtons() {
         activeRanks = new Set([1, 2, 3, 4, 5, 6, 7, 8]);
       } else {
         const num = parseInt(rankVal);
-        // If currently in "ALL" mode, isolate this clicked rank directly
+        // If coming from ALL mode, isolate the clicked rank directly
         if (activeRanks.size === 8) {
           activeRanks = new Set([num]);
         } else if (activeRanks.has(num)) {
@@ -269,7 +272,6 @@ function setupRankButtons() {
         }
       }
 
-      // Update styling of rank buttons
       updateRankButtonStyles();
 
       // Recalculate live stats instantly across active ranks
@@ -286,7 +288,7 @@ function updateRankButtonStyles() {
   const isAll = activeRanks.size === 8;
   const btnAll = document.getElementById("btnRankAll");
   if (btnAll) {
-    btnAll.className = `rank-btn px-2 py-0.5 rounded text-[10px] font-bold transition border ${
+    btnAll.className = `rank-btn px-2 py-0.5 rounded text-[10px] font-bold transition border cursor-pointer ${
       isAll ? "border-gold bg-gold/20 text-gold" : "border-stratzBorder bg-stratzBg text-gray-500 opacity-60"
     }`;
   }
@@ -302,6 +304,9 @@ function updateRankButtonStyles() {
             ? "border-stratzBorder bg-stratzBorder/40 text-gray-300" 
             : "border-transparent bg-transparent text-gray-600 opacity-40"
       }`;
+    }
+  });
+}
 
 function openBanModal(faction) {
   currentBanFaction = faction;
