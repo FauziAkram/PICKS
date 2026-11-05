@@ -1,5 +1,5 @@
 import { fetchLiveHeroStats } from "./api.js";
-import { HEROES, ROLE_ICONS, ROLE_NAMES } from "./heroes.js";
+import { HEROES, ROLE_ICONS, ROLE_NAMES, heroMatchesQuery } from "./heroes.js";
 import { RoshEngine } from "./engine.js";
 
 const SWAP_ICON = `
@@ -324,7 +324,7 @@ function renderBanGrid() {
   const query = (searchInput ? searchInput.value : "").toLowerCase();
 
   container.innerHTML = engine.heroes
-    .filter(h => h.name.toLowerCase().includes(query))
+    .filter(h => heroMatchesQuery(h, query))
     .map(hero => {
       const isBanned = banSet.has(hero.id);
       return `
@@ -363,8 +363,7 @@ function renderBiasModal() {
 
   function drawRows(query = "") {
     rowsContainer.innerHTML = "";
-    const filtered = engine.heroes.filter(h => h.name.toLowerCase().includes(query.toLowerCase()));
-
+    const filtered = engine.heroes.filter(h => heroMatchesQuery(h, query));
     filtered.forEach(hero => {
       const currentBias = engine.getBias(hero.id);
       const row = document.createElement("div");
