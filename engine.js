@@ -2,7 +2,7 @@ import { heroMatchesQuery } from "./heroes.js";
 
 // Lane matchup weights from DotaBASED / STRATZ regression
 const ROLE_MATCHUP_WEIGHTS = {
-  "2vs2": 1.60, // Mid 1v1 pressure is the single most decisive lane matchup
+  "2vs2": 1.60, // Mid 1v1 pressure is #1 most decisive
   "1vs3": 1.35, // Safelane Carry vs Offlaner
   "3vs1": 1.35,
   "3vs5": 1.20, // Offlane Core vs Safelane Support
@@ -44,7 +44,6 @@ export class RoshEngine {
     this.radiantBans = new Set();
     this.direBans = new Set();
 
-    // Cache of raw empirical head-to-head win rate tables: heroId -> { enemyHeroId: winRateVsEnemy }
     this.matchupTables = new Map();
     this.personalBias = this.loadBiases();
   }
@@ -131,8 +130,9 @@ export class RoshEngine {
   }
 
   /**
-   * CANONICAL ADVANTAGE FORMULA:
    * Advantage(A vs B) = WinRate(A vs B) - BaselineWinRate(A)
+   * Positive means A is FAVORED / COUNTERS B.
+   * Negative means A is DISFAVORED / COUNTERED BY B.
    */
   getEmpiricalCounterAdvantage(heroA_id, posA, heroB_id, posB) {
     const heroA = this.heroMap.get(heroA_id);
@@ -147,20 +147,20 @@ export class RoshEngine {
     const tableB = this.matchupTables.get(heroB_id);
 
     if (tableA && tableA[heroB_id] !== undefined) {
-      // Direct head-to-head: WinRate(A vs B) - BaseWinRate(A)
+      // Table A directly contains heroA's empirical win rate vs heroB
       const winRateAvsB = tableA[heroB_id];
       rawAdvantage = winRateAvsB - baseA;
     } else if (tableB && tableB[heroA_id] !== undefined) {
-      // By symmetry: WinRate(B vs A) is known, so WinRate(A vs B) = 100 - WinRate(B vs A)
+      // Table B contains heroB's empirical win rate vs heroA
+      // Therefore, heroA's win rate vs heroB = 100 - winRateBvsA
       const winRateBvsA = tableB[heroA_id];
       const winRateAvsB = 100.0 - winRateBvsA;
       rawAdvantage = winRateAvsB - baseA;
     } else {
-      // Baseline relative delta if network matchup has not arrived yet
+      // Relative win rate delta fallback
       rawAdvantage = (baseA - baseB) * 0.35;
     }
 
-    // Apply role-to-role lane weight (DotaBASED hierarchy)
     const roleKey = `${posA}vs${posB}`;
     const weight = ROLE_MATCHUP_WEIGHTS[roleKey] || ROLE_MATCHUP_WEIGHTS["default"];
 
@@ -199,7 +199,7 @@ export class RoshEngine {
     const allies = isRadiant ? this.radiantPicks : this.direPicks;
     const enemies = isRadiant ? this.direPicks : this.radiantPicks;
 
-    // 2. Add ally lane synergies
+    // 2. Add ally synergies
     for (let p = 1; p <= 5; p++) {
       const allyId = allies[p];
       if (allyId && allyId !== heroId) {
