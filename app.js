@@ -142,7 +142,7 @@ function updateCandidateList(container, faction, pos, query) {
       engine.pickHero(f, p, hId);
       renderAll();
 
-      // Fetch 100% empirical head-to-head match data for this hero
+      // Fetch head-to-head empirical matchup data
       const matchupData = await fetchHeroMatchupData(hId);
       engine.setHeroMatchups(hId, matchupData);
       renderAll();
