@@ -1,3 +1,5 @@
+import { heroMatchesQuery } from "./heroes.js";
+
 /**
  * RoshEngine: Accurate Projected TrueSynergy, Competitive Role Qualifications, and Personal Bias.
  */
