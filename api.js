@@ -2,7 +2,7 @@ let cachedRawHeroes = null;
 const matchupCache = new Map();
 
 /**
- * Fetches all Dota 2 hero data and calculates dynamic win rates based on selected rank brackets [1 to 8]
+ * Fetches all Dota 2 hero data and calculates dynamic baseline win rates for the selected ranks
  */
 export async function fetchLiveHeroStats(selectedBrackets = [1, 2, 3, 4, 5, 6, 7, 8]) {
   try {
@@ -56,7 +56,7 @@ export async function fetchLiveHeroStats(selectedBrackets = [1, 2, 3, 4, 5, 6, 7
 
 /**
  * Fetches real head-to-head empirical matchup win rates for a hero from OpenDota API
- * Returns a map of: enemyHeroId -> head-to-head advantage (-10.0% to +10.0%)
+ * Returns raw head-to-head win rate: enemyHeroId -> headToHeadWinRate (e.g. 56.5%)
  */
 export async function fetchHeroMatchupData(heroId) {
   if (matchupCache.has(heroId)) {
@@ -68,18 +68,17 @@ export async function fetchHeroMatchupData(heroId) {
     if (!response.ok) return {};
     const matchups = await response.json();
 
-    const advantageMap = {};
+    const rawMatchupWinRates = {};
     matchups.forEach((m) => {
-      if (m.games_played >= 20) {
-        // Empirical win rate of heroId against this specific enemy
-        const headToHeadWinRate = (m.wins / m.games_played) * 100;
-        // Advantage relative to 50% baseline
-        advantageMap[m.hero_id] = parseFloat((headToHeadWinRate - 50.0).toFixed(2));
+      if (m.games_played >= 15) {
+        // Exact percentage of matches heroId won when playing against m.hero_id
+        const winRateVsEnemy = (m.wins / m.games_played) * 100;
+        rawMatchupWinRates[m.hero_id] = parseFloat(winRateVsEnemy.toFixed(2));
       }
     });
 
-    matchupCache.set(heroId, advantageMap);
-    return advantageMap;
+    matchupCache.set(heroId, rawMatchupWinRates);
+    return rawMatchupWinRates;
   } catch (err) {
     console.error(`Error fetching matchups for hero ${heroId}:`, err);
     return {};
