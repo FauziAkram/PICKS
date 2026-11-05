@@ -2,16 +2,16 @@ import { heroMatchesQuery } from "./heroes.js";
 
 // Lane matchup weights from DotaBASED / STRATZ regression
 const ROLE_MATCHUP_WEIGHTS = {
-  "2vs2": 1.60, // Mid 1v1 pressure is #1 most decisive
+  "2vs2": 1.60, // Mid 1v1 pressure is the single most decisive lane matchup
   "1vs3": 1.35, // Safelane Carry vs Offlaner
   "3vs1": 1.35,
   "3vs5": 1.20, // Offlane Core vs Safelane Support
   "5vs3": 1.20,
   "1vs4": 1.10, // Safelane Carry vs Soft Support
   "4vs1": 1.10,
-  "4vs5": 1.05, // Support vs Support
+  "4vs5": 1.05,
   "5vs4": 1.05,
-  "default": 0.85 // Cross-lane late-game teamfight matchups
+  "default": 0.85 // Cross-lane teamfight matchups
 };
 
 // Lane synergy weights
@@ -20,9 +20,9 @@ const ROLE_SYNERGY_WEIGHTS = {
   "5+1": 1.30,
   "3+4": 1.25, // Offlane Core + Soft Support Duo
   "4+3": 1.25,
-  "2+4": 1.10, // Mid + Soft Support roaming synergy
+  "2+4": 1.10, // Mid + Soft Support Gank synergy
   "4+2": 1.10,
-  "default": 0.80 // General team synergy
+  "default": 0.80
 };
 
 const COMPETITIVE_POSITIONS = {
@@ -44,7 +44,7 @@ export class RoshEngine {
     this.radiantBans = new Set();
     this.direBans = new Set();
 
-    // Cache of real empirical matchup tables: heroId -> { enemyHeroId: advantage }
+    // Cache of raw empirical head-to-head win rate tables: heroId -> { enemyHeroId: winRateVsEnemy }
     this.matchupTables = new Map();
     this.personalBias = this.loadBiases();
   }
@@ -76,8 +76,8 @@ export class RoshEngine {
     this.heroMap = new Map(heroes.map(h => [h.id, h]));
   }
 
-  setHeroMatchups(heroId, advantageMap) {
-    this.matchupTables.set(heroId, advantageMap);
+  setHeroMatchups(heroId, rawWinRates) {
+    this.matchupTables.set(heroId, rawWinRates);
   }
 
   getHeroWinRate(hero) {
@@ -131,51 +131,56 @@ export class RoshEngine {
   }
 
   /**
-   * Real Empirical Counter Advantage with Role Position Weight
+   * CANONICAL ADVANTAGE FORMULA:
+   * Advantage(A vs B) = WinRate(A vs B) - BaselineWinRate(A)
    */
   getEmpiricalCounterAdvantage(heroA_id, posA, heroB_id, posB) {
-    // 1. Check if heroA has head-to-head empirical data against heroB
+    const heroA = this.heroMap.get(heroA_id);
+    const heroB = this.heroMap.get(heroB_id);
+    if (!heroA || !heroB) return 0;
+
+    const baseA = this.getHeroWinRate(heroA);
+    const baseB = this.getHeroWinRate(heroB);
+
     let rawAdvantage = 0;
     const tableA = this.matchupTables.get(heroA_id);
     const tableB = this.matchupTables.get(heroB_id);
 
     if (tableA && tableA[heroB_id] !== undefined) {
-      rawAdvantage = tableA[heroB_id];
+      // Direct head-to-head: WinRate(A vs B) - BaseWinRate(A)
+      const winRateAvsB = tableA[heroB_id];
+      rawAdvantage = winRateAvsB - baseA;
     } else if (tableB && tableB[heroA_id] !== undefined) {
-      // By symmetry: advantage of A vs B is negative advantage of B vs A
-      rawAdvantage = -tableB[heroA_id];
+      // By symmetry: WinRate(B vs A) is known, so WinRate(A vs B) = 100 - WinRate(B vs A)
+      const winRateBvsA = tableB[heroA_id];
+      const winRateAvsB = 100.0 - winRateBvsA;
+      rawAdvantage = winRateAvsB - baseA;
     } else {
-      // Baseline delta if head-to-head hasn't finished loading yet
-      const heroA = this.heroMap.get(heroA_id);
-      const heroB = this.heroMap.get(heroB_id);
-      rawAdvantage = (this.getHeroWinRate(heroA) - this.getHeroWinRate(heroB)) * 0.4;
+      // Baseline relative delta if network matchup has not arrived yet
+      rawAdvantage = (baseA - baseB) * 0.35;
     }
 
-    // 2. Apply DotaBASED Lane Role Weight
+    // Apply role-to-role lane weight (DotaBASED hierarchy)
     const roleKey = `${posA}vs${posB}`;
     const weight = ROLE_MATCHUP_WEIGHTS[roleKey] || ROLE_MATCHUP_WEIGHTS["default"];
 
     return parseFloat((rawAdvantage * weight).toFixed(1));
   }
 
-  /**
-   * Role-Weighted Lane Synergy
-   */
   getEmpiricalSynergy(heroA_id, posA, heroB_id, posB) {
     const roleKey = `${posA}+${posB}`;
     const weight = ROLE_SYNERGY_WEIGHTS[roleKey] || ROLE_SYNERGY_WEIGHTS["default"];
 
-    // Statistical synergy bonus derived from complementary role execution
     const heroA = this.heroMap.get(heroA_id);
     const heroB = this.heroMap.get(heroB_id);
     if (!heroA || !heroB) return 0;
 
-    let synBase = 0.6;
+    let synBase = 0.5;
     if ((heroA.roles?.includes("Carry") && heroB.roles?.includes("Support")) ||
         (heroA.roles?.includes("Support") && heroB.roles?.includes("Carry"))) {
-      synBase = 1.6;
+      synBase = 1.5;
     } else if (heroA.roles?.includes("Initiator") && heroB.roles?.includes("Nuker")) {
-      synBase = 1.2;
+      synBase = 1.1;
     }
 
     return parseFloat((synBase * weight).toFixed(1));
@@ -185,7 +190,7 @@ export class RoshEngine {
     const hero = this.heroMap.get(heroId);
     if (!hero) return 0;
 
-    // 1. Live win rate baseline (Carry baseline weighted higher per DotaBASED Rank 2)
+    // 1. Live win rate baseline (Pos 1 Carry baseline weighted higher per DotaBASED Rank 2)
     const winRate = this.getHeroWinRate(hero);
     const posMultiplier = targetPos === 1 ? 1.25 : targetPos === 2 ? 1.15 : 1.0;
     let total = (winRate - 50.0) * posMultiplier;
@@ -202,7 +207,7 @@ export class RoshEngine {
       }
     }
 
-    // 3. Add enemy counter advantages (positive if hero counters enemy, negative if countered)
+    // 3. Add enemy counter advantages (Positive if hero counters enemy, Negative if countered)
     for (let p = 1; p <= 5; p++) {
       const enemyId = enemies[p];
       if (enemyId) {
