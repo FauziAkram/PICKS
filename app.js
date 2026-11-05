@@ -256,15 +256,13 @@ function setupRankButtons() {
       const rankVal = btn.dataset.rank;
 
       if (rankVal === "all") {
-        if (activeRanks.size === 8) {
-          activeRanks.clear();
-          activeRanks.add(5); // Default to Legend if all turned off
-        } else {
-          activeRanks = new Set([1, 2, 3, 4, 5, 6, 7, 8]);
-        }
+        activeRanks = new Set([1, 2, 3, 4, 5, 6, 7, 8]);
       } else {
         const num = parseInt(rankVal);
-        if (activeRanks.has(num)) {
+        // If currently in "ALL" mode, isolate this clicked rank directly
+        if (activeRanks.size === 8) {
+          activeRanks = new Set([num]);
+        } else if (activeRanks.has(num)) {
           if (activeRanks.size > 1) activeRanks.delete(num);
         } else {
           activeRanks.add(num);
@@ -289,20 +287,21 @@ function updateRankButtonStyles() {
   const btnAll = document.getElementById("btnRankAll");
   if (btnAll) {
     btnAll.className = `rank-btn px-2 py-0.5 rounded text-[10px] font-bold transition border ${
-      isAll ? "border-gold bg-gold/20 text-gold" : "border-stratzBorder bg-stratzBg text-gray-400"
+      isAll ? "border-gold bg-gold/20 text-gold" : "border-stratzBorder bg-stratzBg text-gray-500 opacity-60"
     }`;
   }
 
   document.querySelectorAll(".rank-btn[data-rank]").forEach(btn => {
     const r = parseInt(btn.dataset.rank);
     if (!isNaN(r)) {
-      const isActive = activeRanks.has(r);
-      btn.className = `rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border ${
-        isActive ? "border-stratzBorder bg-stratzBorder/70 text-white" : "border-transparent bg-transparent text-gray-500 opacity-60"
+      const isActive = !isAll && activeRanks.has(r);
+      btn.className = `rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border cursor-pointer ${
+        isActive 
+          ? "border-gold bg-gold/20 text-gold font-bold shadow-sm" 
+          : isAll 
+            ? "border-stratzBorder bg-stratzBorder/40 text-gray-300" 
+            : "border-transparent bg-transparent text-gray-600 opacity-40"
       }`;
-    }
-  });
-}
 
 function openBanModal(faction) {
   currentBanFaction = faction;
