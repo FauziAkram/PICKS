@@ -2,7 +2,6 @@ import { fetchLiveHeroStats } from "./api.js";
 import { HEROES, ROLE_ICONS, ROLE_NAMES } from "./heroes.js";
 import { RoshEngine } from "./engine.js";
 
-// STRATZ-style SVG Swap Icon (Two opposing arrows)
 const SWAP_ICON = `
   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
     <path d="M7 16V4m0 0L3 8m4-4l4 4m10 4v12m0 0l4-4m-4 4l-4-4"/>
@@ -12,23 +11,18 @@ const SWAP_ICON = `
 let engine = new RoshEngine(HEROES);
 let currentSearchQueries = { radiant: {}, dire: {} };
 let currentBanFaction = "radiant";
+let activeRanks = new Set([1, 2, 3, 4, 5, 6, 7, 8]); // Default: All Ranks (General)
 
 function init() {
-  // 1. Immediately setup buttons and render default data so UI is interactive right away
   setupEventListeners();
   renderAll();
 
-  // 2. Fetch live Dota 2 stats in background and seamlessly update win rates
-  const rankSelect = document.getElementById("rankSelector");
-  const initialRank = rankSelect ? rankSelect.value : "LEGEND";
-
-  fetchLiveHeroStats(initialRank).then(liveHeroes => {
+  // Load live stats across all ranks
+  fetchLiveHeroStats(Array.from(activeRanks)).then(liveHeroes => {
     if (liveHeroes && liveHeroes.length > 0) {
       engine.setHeroes(liveHeroes);
       renderAll();
     }
-  }).catch(err => {
-    console.log("Using cached heroes roster:", err);
   });
 }
 
@@ -64,6 +58,7 @@ function renderColumns(faction) {
     const heroId = picks[pos];
     const col = document.createElement("div");
     col.className = "flex flex-col bg-stratzCard border border-stratzBorder rounded-lg overflow-hidden h-[740px]";
+    col.id = `col-${faction}-${pos}`;
 
     if (heroId) {
       renderPickedColumn(col, faction, pos, heroId);
@@ -77,7 +72,6 @@ function renderColumns(faction) {
 
 function renderEmptyColumn(col, faction, pos) {
   const searchVal = (currentSearchQueries[faction] && currentSearchQueries[faction][pos]) || "";
-  const candidates = engine.getRecommendationsForSlot(faction, pos, searchVal);
 
   col.innerHTML = `
     <!-- Top Role Icon -->
@@ -95,34 +89,45 @@ function renderEmptyColumn(col, faction, pos) {
     </div>
 
     <!-- Scrollable Candidate Recommendation List -->
-    <div class="flex-1 overflow-y-auto p-1.5 space-y-1">
-      ${candidates.slice(0, 40).map(({ hero, rawTS, bias, biasedScore }) => `
-        <div class="candidate-row group flex items-center justify-between p-1 rounded hover:bg-stratzBorder/60 cursor-pointer transition border border-transparent hover:border-stratzBorder"
-             data-faction="${faction}" data-pos="${pos}" data-heroid="${hero.id}">
-          <div class="flex items-center space-x-1.5 overflow-hidden">
-            <img src="${hero.img}" class="w-8 h-5 object-cover rounded" alt="${hero.name}">
-            <div class="truncate text-[11px] font-medium text-gray-300 group-hover:text-white">${hero.name}</div>
-          </div>
-          <div class="text-right flex items-center space-x-1 flex-shrink-0">
-            ${bias !== 0 ? `
-              <span class="text-[9px] px-1 rounded font-mono ${bias > 0 ? "bg-radiant/20 text-radiant" : "bg-red-500/20 text-red-400"}" title="Personal Bias: ${bias > 0 ? "+" : ""}${bias}">
-                ${bias > 0 ? "+" : ""}${bias}
-              </span>
-            ` : ""}
-            <span class="text-xs font-mono font-bold ${biasedScore >= 0 ? "text-gray-200" : "text-gray-500"}">${biasedScore.toFixed(1)}</span>
-          </div>
-        </div>
-      `).join("")}
-    </div>
+    <div class="candidate-list-container flex-1 overflow-y-auto p-1.5 space-y-1"></div>
   `;
 
-  col.querySelector(".slot-search").addEventListener("input", (e) => {
-    if (!currentSearchQueries[faction]) currentSearchQueries[faction] = {};
-    currentSearchQueries[faction][pos] = e.target.value;
-    renderColumns(faction);
-  });
+  const listContainer = col.querySelector(".candidate-list-container");
+  updateCandidateList(listContainer, faction, pos, searchVal);
 
-  col.querySelectorAll(".candidate-row").forEach(row => {
+  const input = col.querySelector(".slot-search");
+  input.addEventListener("input", (e) => {
+    const query = e.target.value;
+    if (!currentSearchQueries[faction]) currentSearchQueries[faction] = {};
+    currentSearchQueries[faction][pos] = query;
+
+    // PRESERVE FOCUS: Only update the candidate list, DO NOT re-render the input!
+    updateCandidateList(listContainer, faction, pos, query);
+  });
+}
+
+function updateCandidateList(container, faction, pos, query) {
+  const candidates = engine.getRecommendationsForSlot(faction, pos, query);
+
+  container.innerHTML = candidates.slice(0, 40).map(({ hero, rawTS, bias, biasedScore }) => `
+    <div class="candidate-row group flex items-center justify-between p-1 rounded hover:bg-stratzBorder/60 cursor-pointer transition border border-transparent hover:border-stratzBorder"
+         data-faction="${faction}" data-pos="${pos}" data-heroid="${hero.id}">
+      <div class="flex items-center space-x-1.5 overflow-hidden">
+        <img src="${hero.img}" class="w-8 h-5 object-cover rounded" alt="${hero.name}">
+        <div class="truncate text-[11px] font-medium text-gray-300 group-hover:text-white">${hero.name}</div>
+      </div>
+      <div class="text-right flex items-center space-x-1 flex-shrink-0">
+        ${bias !== 0 ? `
+          <span class="text-[9px] px-1 rounded font-mono ${bias > 0 ? "bg-radiant/20 text-radiant" : "bg-red-500/20 text-red-400"}" title="Personal Bias: ${bias > 0 ? "+" : ""}${bias}">
+            ${bias > 0 ? "+" : ""}${bias}
+          </span>
+        ` : ""}
+        <span class="text-xs font-mono font-bold ${biasedScore >= 0 ? "text-gray-200" : "text-gray-500"}">${biasedScore.toFixed(1)}</span>
+      </div>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".candidate-row").forEach(row => {
     row.addEventListener("click", () => {
       engine.pickHero(row.dataset.faction, parseInt(row.dataset.pos), parseInt(row.dataset.heroid));
       renderAll();
@@ -132,7 +137,7 @@ function renderEmptyColumn(col, faction, pos) {
 
 function renderPickedColumn(col, faction, pos, heroId) {
   const hero = engine.heroMap.get(heroId);
-  const currentTS = engine.calculateHeroTrueSynergy(heroId, pos, faction);
+  const currentTS = engine.calculateProjectedTrueSynergy(heroId, pos, faction);
   const logRows = engine.getPickedLog(heroId, pos, faction);
 
   col.innerHTML = `
@@ -223,14 +228,8 @@ function setupEventListeners() {
     renderAll();
   });
 
-  // Rank Selector
-  document.getElementById("rankSelector").addEventListener("change", async (e) => {
-    const updatedHeroes = await fetchLiveHeroStats(e.target.value);
-    if (updatedHeroes && updatedHeroes.length > 0) {
-      engine.setHeroes(updatedHeroes);
-      renderAll();
-    }
-  });
+  // Rank Selector Buttons
+  setupRankButtons();
 
   // Ban Modals
   document.getElementById("btnRadiantBans").addEventListener("click", () => openBanModal("radiant"));
@@ -246,6 +245,62 @@ function setupEventListeners() {
   document.getElementById("btnCloseBiasModal").addEventListener("click", () => {
     biasModal.classList.add("hidden");
     renderAll();
+  });
+}
+
+function setupRankButtons() {
+  const rankButtons = document.querySelectorAll(".rank-btn");
+
+  rankButtons.forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const rankVal = btn.dataset.rank;
+
+      if (rankVal === "all") {
+        if (activeRanks.size === 8) {
+          activeRanks.clear();
+          activeRanks.add(5); // Default to Legend if all turned off
+        } else {
+          activeRanks = new Set([1, 2, 3, 4, 5, 6, 7, 8]);
+        }
+      } else {
+        const num = parseInt(rankVal);
+        if (activeRanks.has(num)) {
+          if (activeRanks.size > 1) activeRanks.delete(num);
+        } else {
+          activeRanks.add(num);
+        }
+      }
+
+      // Update styling of rank buttons
+      updateRankButtonStyles();
+
+      // Recalculate live stats instantly across active ranks
+      const updatedHeroes = await fetchLiveHeroStats(Array.from(activeRanks));
+      if (updatedHeroes && updatedHeroes.length > 0) {
+        engine.setHeroes(updatedHeroes);
+        renderAll();
+      }
+    });
+  });
+}
+
+function updateRankButtonStyles() {
+  const isAll = activeRanks.size === 8;
+  const btnAll = document.getElementById("btnRankAll");
+  if (btnAll) {
+    btnAll.className = `rank-btn px-2 py-0.5 rounded text-[10px] font-bold transition border ${
+      isAll ? "border-gold bg-gold/20 text-gold" : "border-stratzBorder bg-stratzBg text-gray-400"
+    }`;
+  }
+
+  document.querySelectorAll(".rank-btn[data-rank]").forEach(btn => {
+    const r = parseInt(btn.dataset.rank);
+    if (!isNaN(r)) {
+      const isActive = activeRanks.has(r);
+      btn.className = `rank-btn px-1.5 py-0.5 rounded text-[10px] font-medium transition border ${
+        isActive ? "border-stratzBorder bg-stratzBorder/70 text-white" : "border-transparent bg-transparent text-gray-500 opacity-60"
+      }`;
+    }
   });
 }
 
@@ -345,7 +400,6 @@ function renderBiasModal() {
   document.getElementById("biasSearchInput").addEventListener("input", (e) => drawRows(e.target.value));
 }
 
-// Start immediately
 window.addEventListener("DOMContentLoaded", init);
 if (document.readyState === "complete" || document.readyState === "interactive") {
   init();
