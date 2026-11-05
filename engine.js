@@ -273,13 +273,14 @@ export class RoshEngine {
     ]);
 
     const candidates = [];
-    const query = searchQuery.toLowerCase().trim();
+    const query = searchQuery.trim();
 
     for (const hero of this.heroes) {
       if (pickedSet.has(hero.id)) continue;
 
       if (query) {
-        if (!hero.name.toLowerCase().includes(query)) continue;
+        // Shorthand/Nickname search matches against any alias or name
+        if (!heroMatchesQuery(hero, query)) continue;
       } else {
         if (!this.isHeroQualifiedForPosition(hero, targetPos)) continue;
       }
