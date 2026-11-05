@@ -56,7 +56,7 @@ export class RoshEngine {
 
   getHeroWinRate(hero) {
     if (!hero) return 50.0;
-    return hero.liveWinRate || hero.baseWinRate || 50.0;
+    return hero.liveWinRate !== undefined ? hero.liveWinRate : 50.0;
   }
 
   pickHero(faction, pos, heroId) {
