@@ -1,14 +1,12 @@
-// Official Valve Steam CDN Hero Portrait Helper
 export const getHeroImg = (shortName) => 
   `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${shortName}.png`;
 
-// STRATZ Role Icons (SVG)
 export const ROLE_ICONS = {
-  1: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>`, // Pos 1 Sword
-  2: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3"/></svg>`, // Pos 2 Crosshair/Mid
-  3: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`, // Pos 3 Shield
-  4: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`, // Pos 4 Flame
-  5: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.9-2.3L2.3 14.5a1.7 1.7 0 0 1 2.4-2.4L7 14"/></svg>` // Pos 5 Hand
+  1: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>`,
+  2: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3"/></svg>`,
+  3: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  4: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+  5: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.9-2.3L2.3 14.5a1.7 1.7 0 0 1 2.4-2.4L7 14"/></svg>`
 };
 
 export const ROLE_NAMES = {
@@ -19,7 +17,154 @@ export const ROLE_NAMES = {
   5: "Hard Support"
 };
 
-// Roster of Dota 2 Heroes with default lane qualifications and Valve short names
+// Comprehensive Dota 2 Hero Aliases, Acronyms & Nicknames
+export const HERO_ALIASES = {
+  1: ["am", "anti-mage", "antimage", "magina"],
+  2: ["axe", "mogul kahn"],
+  3: ["bane", "atropos"],
+  4: ["bs", "bloodseeker", "strygwyr"],
+  5: ["cm", "crystal maiden", "rylai"],
+  6: ["drow", "dr", "traxex"],
+  7: ["es", "earthshaker", "shaker", "raigor"],
+  8: ["jugg", "jug", "juggernaut", "yurnero"],
+  9: ["potm", "mirana", "priestess", "priestess of the moon"],
+  10: ["morph", "morphling"],
+  11: ["sf", "shadow fiend", "nevermore"],
+  12: ["pl", "phantom lancer", "azwraith"],
+  13: ["puck", "faerie dragon"],
+  14: ["pudge", "butcher"],
+  15: ["razor", "lightning revenant"],
+  16: ["sk", "sand king", "crixalis"],
+  17: ["ss", "storm", "storm spirit", "raijin"],
+  18: ["sven", "rogue knight"],
+  19: ["tiny", "stone giant"],
+  20: ["vs", "venge", "vengeful spirit", "shendelzare"],
+  21: ["wr", "wind", "windranger", "windrunner", "lyralei"],
+  22: ["zeus", "zuus", "lord of heaven"],
+  23: ["kunkka", "admiral", "coco"],
+  25: ["lina", "slayer"],
+  26: ["lion", "demon witch"],
+  27: ["ss", "shadow shaman", "rhasta"],
+  28: ["slardar"],
+  29: ["tide", "tidehunter", "leviathan"],
+  30: ["wd", "witch doctor", "voljin"],
+  31: ["lich", "ethreain"],
+  32: ["riki", "sa"],
+  33: ["enigma"],
+  34: ["tinker", "boush"],
+  35: ["sniper", "kardel"],
+  36: ["necro", "necrophos", "necrolyte"],
+  37: ["warlock", "demnok"],
+  38: ["bm", "beastmaster", "karroch"],
+  39: ["qop", "queen of pain", "akasha"],
+  40: ["veno", "venomancer", "lesale"],
+  41: ["fv", "void", "faceless void", "darkterror"],
+  42: ["wk", "sk", "wraith king", "skeleton king", "oostarion"],
+  43: ["dp", "death prophet", "krobelus"],
+  44: ["pa", "phantom assassin", "mortred"],
+  45: ["pugna", "oblivion"],
+  46: ["ta", "templar assassin", "lanaya"],
+  47: ["viper", "netherdrake"],
+  48: ["luna", "moon fang"],
+  49: ["dk", "dragon knight", "davion"],
+  50: ["dazzle", "shadow priest"],
+  51: ["cw", "clock", "clockwerk", "rattletrap"],
+  52: ["leshrac", "ts", "tormented soul"],
+  53: ["np", "furion", "nature's prophet", "prophet"],
+  54: ["ls", "naix", "lifestealer", "n'aix"],
+  55: ["ds", "dark seer", "ishkafel"],
+  56: ["clinkz", "bone", "fletcher"],
+  57: ["omni", "omniknight", "purist"],
+  58: ["enchantress", "bambi", "aiushtha"],
+  59: ["huskar", "sacred warrior"],
+  60: ["ns", "night stalker", "balanar"],
+  61: ["brood", "broodmother"],
+  62: ["bh", "bounty hunter", "gondar"],
+  63: ["weaver", "skitskurr"],
+  64: ["jakiro", "thd", "twin head dragon"],
+  65: ["bat", "batrider"],
+  66: ["chen", "holy knight"],
+  67: ["spec", "spectre", "mercurial"],
+  68: ["aa", "ancient apparition", "kaldr"],
+  69: ["doom", "lucifer"],
+  70: ["ursa", "ulfsaar"],
+  71: ["sb", "bara", "spirit breaker", "barathrum"],
+  72: ["gyro", "gyrocopter", "aurel"],
+  73: ["alch", "alchemist", "razzil"],
+  74: ["invo", "invoker", "kael", "carl"],
+  75: ["silencer", "nortrom"],
+  76: ["od", "outworld destroyer", "outworld devourer", "obsidian destroyer"],
+  77: ["lycan", "banehallow"],
+  78: ["brew", "brewmaster", "panda", "mangix"],
+  79: ["sd", "shadow demon", "eredar"],
+  80: ["sylla", "lone druid", "ld", "bear"],
+  81: ["ck", "chaos knight", "nessaj"],
+  82: ["meepo", "geomancer"],
+  83: ["tree", "treant", "treant protector", "rooftrellen"],
+  84: ["ogre", "ogre magi", "aggron"],
+  85: ["undying", "dirge"],
+  86: ["rubick", "grand magus"],
+  87: ["disruptor", "thrall"],
+  88: ["nyx", "nyx assassin", "na"],
+  89: ["naga", "naga siren", "slithice"],
+  90: ["kotl", "keeper of the light", "ezalor", "gandalf"],
+  91: ["io", "wisp"],
+  92: ["visage", "necrolic"],
+  93: ["slark", "murloc"],
+  94: ["medusa", "dusa", "gorgon"],
+  95: ["troll", "troll warlord", "jahrakal"],
+  96: ["centaur", "cw", "centaur warrunner", "bradwarden"],
+  97: ["mag", "magnus", "magnoceros"],
+  98: ["timber", "timbersaw", "shredder", "rizzrack"],
+  99: ["bb", "bristleback", "bristle", "rigwarl"],
+  100: ["tusk", "tuskarr", "ymir"],
+  101: ["sky", "skywrath", "dragonus"],
+  102: ["abaddon", "aba", "lord of avernus"],
+  103: ["et", "elder titan", "titan", "tc"],
+  104: ["lc", "legion", "legion commander", "tresdin"],
+  105: ["techies", "squee"],
+  106: ["ember", "ember spirit", "xin", "es"],
+  107: ["earth spirit", "kaolin", "es"],
+  108: ["underlord", "pit lord", "vrogros"],
+  109: ["tb", "terrorblade"],
+  110: ["phoenix"],
+  111: ["oracle", "nerif"],
+  112: ["ww", "winter wyvern", "auroth"],
+  113: ["arc", "arc warden", "zet", "aw"],
+  114: ["mk", "monkey king", "wukong"],
+  119: ["willow", "dark willow", "dw", "mireska"],
+  120: ["pango", "pangolier"],
+  121: ["grim", "grimstroke"],
+  123: ["hood", "hoodwink"],
+  126: ["void spirit", "inai"],
+  128: ["snap", "snapfire", "beatrix"],
+  129: ["mars"],
+  135: ["dawn", "dawnbreaker", "db", "valora"],
+  136: ["marci"],
+  137: ["pb", "primal beast"],
+  138: ["muerta"]
+};
+
+/**
+ * Checks if a hero matches a query by full name, short name, or any known acronym/nickname
+ */
+export function heroMatchesQuery(hero, query) {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+
+  // 1. Direct name or internal short name match
+  if (hero.name.toLowerCase().includes(q)) return true;
+  if (hero.shortName && hero.shortName.toLowerCase().includes(q)) return true;
+
+  // 2. Nicknames and acronyms match
+  const aliases = HERO_ALIASES[hero.id];
+  if (aliases) {
+    return aliases.some(alias => alias.toLowerCase().includes(q) || q.includes(alias.toLowerCase()));
+  }
+
+  return false;
+}
+
 export const HEROES = [
   { id: 1, name: "Anti-Mage", shortName: "antimage", defaultPos: 1, baseWinRate: 51.2 },
   { id: 2, name: "Axe", shortName: "axe", defaultPos: 3, baseWinRate: 52.4 },
@@ -89,5 +234,4 @@ export const HEROES = [
   { id: 138, name: "Muerta", shortName: "muerta", defaultPos: 1, baseWinRate: 49.7 }
 ];
 
-// Helper lookup map by ID
 export const HERO_MAP = new Map(HEROES.map(h => [h.id, h]));
