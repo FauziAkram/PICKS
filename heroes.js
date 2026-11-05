@@ -145,18 +145,13 @@ export const HERO_ALIASES = {
   138: ["muerta"]
 };
 
-/**
- * Checks if a hero matches a query by full name, short name, or any known acronym/nickname
- */
 export function heroMatchesQuery(hero, query) {
   if (!query) return true;
   const q = query.toLowerCase().trim();
 
-  // 1. Direct name or internal short name match
   if (hero.name.toLowerCase().includes(q)) return true;
   if (hero.shortName && hero.shortName.toLowerCase().includes(q)) return true;
 
-  // 2. Nicknames and acronyms match
   const aliases = HERO_ALIASES[hero.id];
   if (aliases) {
     return aliases.some(alias => alias.toLowerCase().includes(q) || q.includes(alias.toLowerCase()));
@@ -165,77 +160,78 @@ export function heroMatchesQuery(hero, query) {
   return false;
 }
 
+// Hero Identity definitions (pure metadata only; all win rates come live from OpenDota API)
 export const HEROES = [
-  { id: 1, name: "Anti-Mage", shortName: "antimage", defaultPos: 1, baseWinRate: 51.2 },
-  { id: 2, name: "Axe", shortName: "axe", defaultPos: 3, baseWinRate: 52.4 },
-  { id: 3, name: "Bane", shortName: "bane", defaultPos: 5, baseWinRate: 49.8 },
-  { id: 4, name: "Bloodseeker", shortName: "bloodseeker", defaultPos: 1, baseWinRate: 49.5 },
-  { id: 5, name: "Crystal Maiden", shortName: "crystal_maiden", defaultPos: 5, baseWinRate: 52.8 },
-  { id: 6, name: "Drow Ranger", shortName: "drow_ranger", defaultPos: 1, baseWinRate: 50.6 },
-  { id: 7, name: "Earthshaker", shortName: "earthshaker", defaultPos: 4, baseWinRate: 51.5 },
-  { id: 8, name: "Juggernaut", shortName: "juggernaut", defaultPos: 1, baseWinRate: 51.8 },
-  { id: 9, name: "Mirana", shortName: "mirana", defaultPos: 4, baseWinRate: 48.9 },
-  { id: 10, name: "Morphling", shortName: "morphling", defaultPos: 1, baseWinRate: 47.5 },
-  { id: 11, name: "Shadow Fiend", shortName: "nevermore", defaultPos: 2, baseWinRate: 50.1 },
-  { id: 12, name: "Phantom Lancer", shortName: "phantom_lancer", defaultPos: 1, baseWinRate: 51.9 },
-  { id: 13, name: "Puck", shortName: "puck", defaultPos: 2, baseWinRate: 49.2 },
-  { id: 14, name: "Pudge", shortName: "pudge", defaultPos: 4, baseWinRate: 50.8 },
-  { id: 15, name: "Razor", shortName: "razor", defaultPos: 3, baseWinRate: 50.3 },
-  { id: 16, name: "Sand King", shortName: "sand_king", defaultPos: 3, baseWinRate: 52.1 },
-  { id: 17, name: "Storm Spirit", shortName: "storm_spirit", defaultPos: 2, baseWinRate: 50.7 },
-  { id: 18, name: "Sven", shortName: "sven", defaultPos: 1, baseWinRate: 51.0 },
-  { id: 19, name: "Tiny", shortName: "tiny", defaultPos: 2, baseWinRate: 49.6 },
-  { id: 20, name: "Vengeful Spirit", shortName: "vengefulspirit", defaultPos: 5, baseWinRate: 53.2 },
-  { id: 21, name: "Windranger", shortName: "windrunner", defaultPos: 2, baseWinRate: 50.4 },
-  { id: 22, name: "Zeus", shortName: "zuus", defaultPos: 2, baseWinRate: 52.6 },
-  { id: 25, name: "Lina", shortName: "lina", defaultPos: 2, baseWinRate: 51.1 },
-  { id: 26, name: "Lion", shortName: "lion", defaultPos: 5, baseWinRate: 49.3 },
-  { id: 27, name: "Shadow Shaman", shortName: "shadow_shaman", defaultPos: 5, baseWinRate: 51.4 },
-  { id: 28, name: "Slardar", shortName: "slardar", defaultPos: 3, baseWinRate: 53.0 },
-  { id: 29, name: "Tidehunter", shortName: "tidehunter", defaultPos: 3, baseWinRate: 51.7 },
-  { id: 30, name: "Witch Doctor", shortName: "witch_doctor", defaultPos: 5, baseWinRate: 52.9 },
-  { id: 31, name: "Lich", shortName: "lich", defaultPos: 5, baseWinRate: 52.0 },
-  { id: 32, name: "Riki", shortName: "riki", defaultPos: 1, baseWinRate: 51.3 },
-  { id: 33, name: "Enigma", shortName: "enigma", defaultPos: 3, baseWinRate: 50.5 },
-  { id: 34, name: "Tinker", shortName: "tinker", defaultPos: 2, baseWinRate: 48.7 },
-  { id: 35, name: "Sniper", shortName: "sniper", defaultPos: 2, baseWinRate: 51.6 },
-  { id: 36, name: "Necrophos", shortName: "necrolyte", defaultPos: 2, baseWinRate: 52.2 },
-  { id: 38, name: "Beastmaster", shortName: "beastmaster", defaultPos: 3, baseWinRate: 51.0 },
-  { id: 39, name: "Queen of Pain", shortName: "queenofpain", defaultPos: 2, baseWinRate: 49.9 },
-  { id: 41, name: "Faceless Void", shortName: "faceless_void", defaultPos: 1, baseWinRate: 50.8 },
-  { id: 42, name: "Wraith King", shortName: "skeleton_king", defaultPos: 1, baseWinRate: 52.5 },
-  { id: 44, name: "Phantom Assassin", shortName: "phantom_assassin", defaultPos: 1, baseWinRate: 50.9 },
-  { id: 45, name: "Pugna", shortName: "pugna", defaultPos: 4, baseWinRate: 50.1 },
-  { id: 46, name: "Templar Assassin", shortName: "templar_assassin", defaultPos: 2, baseWinRate: 50.7 },
-  { id: 47, name: "Viper", shortName: "viper", defaultPos: 2, baseWinRate: 51.8 },
-  { id: 48, name: "Luna", shortName: "luna", defaultPos: 1, baseWinRate: 51.4 },
-  { id: 49, name: "Dragon Knight", shortName: "dragon_knight", defaultPos: 2, baseWinRate: 51.5 },
-  { id: 50, name: "Dazzle", shortName: "dazzle", defaultPos: 5, baseWinRate: 50.6 },
-  { id: 53, name: "Nature's Prophet", shortName: "furion", defaultPos: 4, baseWinRate: 48.8 },
-  { id: 54, name: "Lifestealer", shortName: "life_stealer", defaultPos: 1, baseWinRate: 51.6 },
-  { id: 56, name: "Clinkz", shortName: "clinkz", defaultPos: 1, baseWinRate: 50.2 },
-  { id: 57, name: "Omniknight", shortName: "omniknight", defaultPos: 3, baseWinRate: 52.3 },
-  { id: 64, name: "Jakiro", shortName: "jakiro", defaultPos: 5, baseWinRate: 52.4 },
-  { id: 67, name: "Spectre", shortName: "spectre", defaultPos: 1, baseWinRate: 52.7 },
-  { id: 70, name: "Ursa", shortName: "ursa", defaultPos: 1, baseWinRate: 51.9 },
-  { id: 74, name: "Invoker", shortName: "invoker", defaultPos: 2, baseWinRate: 49.5 },
-  { id: 75, name: "Silencer", shortName: "silencer", defaultPos: 5, baseWinRate: 50.5 },
-  { id: 82, name: "Meepo", shortName: "meepo", defaultPos: 2, baseWinRate: 53.1 },
-  { id: 84, name: "Ogre Magi", shortName: "ogre_magi", defaultPos: 5, baseWinRate: 51.7 },
-  { id: 86, name: "Rubick", shortName: "rubick", defaultPos: 4, baseWinRate: 48.5 },
-  { id: 93, name: "Slark", shortName: "slark", defaultPos: 1, baseWinRate: 51.1 },
-  { id: 99, name: "Bristleback", shortName: "bristleback", defaultPos: 3, baseWinRate: 51.8 },
-  { id: 104, name: "Legion Commander", shortName: "legion_commander", defaultPos: 3, baseWinRate: 51.4 },
-  { id: 106, name: "Ember Spirit", shortName: "ember_spirit", defaultPos: 2, baseWinRate: 50.1 },
-  { id: 114, name: "Monkey King", shortName: "monkey_king", defaultPos: 1, baseWinRate: 49.8 },
-  { id: 121, name: "Grimstroke", shortName: "grimstroke", defaultPos: 4, baseWinRate: 49.4 },
-  { id: 123, name: "Hoodwink", shortName: "hoodwink", defaultPos: 4, baseWinRate: 50.2 },
-  { id: 137, name: "Primal Beast", shortName: "primal_beast", defaultPos: 3, baseWinRate: 51.3 },
-  { id: 138, name: "Muerta", shortName: "muerta", defaultPos: 1, baseWinRate: 49.7 }
+  { id: 1, name: "Anti-Mage", shortName: "antimage", defaultPos: 1 },
+  { id: 2, name: "Axe", shortName: "axe", defaultPos: 3 },
+  { id: 3, name: "Bane", shortName: "bane", defaultPos: 5 },
+  { id: 4, name: "Bloodseeker", shortName: "bloodseeker", defaultPos: 1 },
+  { id: 5, name: "Crystal Maiden", shortName: "crystal_maiden", defaultPos: 5 },
+  { id: 6, name: "Drow Ranger", shortName: "drow_ranger", defaultPos: 1 },
+  { id: 7, name: "Earthshaker", shortName: "earthshaker", defaultPos: 4 },
+  { id: 8, name: "Juggernaut", shortName: "juggernaut", defaultPos: 1 },
+  { id: 9, name: "Mirana", shortName: "mirana", defaultPos: 4 },
+  { id: 10, name: "Morphling", shortName: "morphling", defaultPos: 1 },
+  { id: 11, name: "Shadow Fiend", shortName: "nevermore", defaultPos: 2 },
+  { id: 12, name: "Phantom Lancer", shortName: "phantom_lancer", defaultPos: 1 },
+  { id: 13, name: "Puck", shortName: "puck", defaultPos: 2 },
+  { id: 14, name: "Pudge", shortName: "pudge", defaultPos: 4 },
+  { id: 15, name: "Razor", shortName: "razor", defaultPos: 3 },
+  { id: 16, name: "Sand King", shortName: "sand_king", defaultPos: 3 },
+  { id: 17, name: "Storm Spirit", shortName: "storm_spirit", defaultPos: 2 },
+  { id: 18, name: "Sven", shortName: "sven", defaultPos: 1 },
+  { id: 19, name: "Tiny", shortName: "tiny", defaultPos: 2 },
+  { id: 20, name: "Vengeful Spirit", shortName: "vengefulspirit", defaultPos: 5 },
+  { id: 21, name: "Windranger", shortName: "windrunner", defaultPos: 2 },
+  { id: 22, name: "Zeus", shortName: "zuus", defaultPos: 2 },
+  { id: 25, name: "Lina", shortName: "lina", defaultPos: 2 },
+  { id: 26, name: "Lion", shortName: "lion", defaultPos: 5 },
+  { id: 27, name: "Shadow Shaman", shortName: "shadow_shaman", defaultPos: 5 },
+  { id: 28, name: "Slardar", shortName: "slardar", defaultPos: 3 },
+  { id: 29, name: "Tidehunter", shortName: "tidehunter", defaultPos: 3 },
+  { id: 30, name: "Witch Doctor", shortName: "witch_doctor", defaultPos: 5 },
+  { id: 31, name: "Lich", shortName: "lich", defaultPos: 5 },
+  { id: 32, name: "Riki", shortName: "riki", defaultPos: 1 },
+  { id: 33, name: "Enigma", shortName: "enigma", defaultPos: 3 },
+  { id: 34, name: "Tinker", shortName: "tinker", defaultPos: 2 },
+  { id: 35, name: "Sniper", shortName: "sniper", defaultPos: 2 },
+  { id: 36, name: "Necrophos", shortName: "necrolyte", defaultPos: 2 },
+  { id: 38, name: "Beastmaster", shortName: "beastmaster", defaultPos: 3 },
+  { id: 39, name: "Queen of Pain", shortName: "queenofpain", defaultPos: 2 },
+  { id: 41, name: "Faceless Void", shortName: "faceless_void", defaultPos: 1 },
+  { id: 42, name: "Wraith King", shortName: "skeleton_king", defaultPos: 1 },
+  { id: 44, name: "Phantom Assassin", shortName: "phantom_assassin", defaultPos: 1 },
+  { id: 45, name: "Pugna", shortName: "pugna", defaultPos: 4 },
+  { id: 46, name: "Templar Assassin", shortName: "templar_assassin", defaultPos: 2 },
+  { id: 47, name: "Viper", shortName: "viper", defaultPos: 2 },
+  { id: 48, name: "Luna", shortName: "luna", defaultPos: 1 },
+  { id: 49, name: "Dragon Knight", shortName: "dragon_knight", defaultPos: 2 },
+  { id: 50, name: "Dazzle", shortName: "dazzle", defaultPos: 5 },
+  { id: 53, name: "Nature's Prophet", shortName: "furion", defaultPos: 4 },
+  { id: 54, name: "Lifestealer", shortName: "life_stealer", defaultPos: 1 },
+  { id: 56, name: "Clinkz", shortName: "clinkz", defaultPos: 1 },
+  { id: 57, name: "Omniknight", shortName: "omniknight", defaultPos: 3 },
+  { id: 64, name: "Jakiro", shortName: "jakiro", defaultPos: 5 },
+  { id: 67, name: "Spectre", shortName: "spectre", defaultPos: 1 },
+  { id: 70, name: "Ursa", shortName: "ursa", defaultPos: 1 },
+  { id: 74, name: "Invoker", shortName: "invoker", defaultPos: 2 },
+  { id: 75, name: "Silencer", shortName: "silencer", defaultPos: 5 },
+  { id: 82, name: "Meepo", shortName: "meepo", defaultPos: 2 },
+  { id: 84, name: "Ogre Magi", shortName: "ogre_magi", defaultPos: 5 },
+  { id: 86, name: "Rubick", shortName: "rubick", defaultPos: 4 },
+  { id: 93, name: "Slark", shortName: "slark", defaultPos: 1 },
+  { id: 99, name: "Bristleback", shortName: "bristleback", defaultPos: 3 },
+  { id: 104, name: "Legion Commander", shortName: "legion_commander", defaultPos: 3 },
+  { id: 106, name: "Ember Spirit", shortName: "ember_spirit", defaultPos: 2 },
+  { id: 114, name: "Monkey King", shortName: "monkey_king", defaultPos: 1 },
+  { id: 121, name: "Grimstroke", shortName: "grimstroke", defaultPos: 4 },
+  { id: 123, name: "Hoodwink", shortName: "hoodwink", defaultPos: 4 },
+  { id: 137, name: "Primal Beast", shortName: "primal_beast", defaultPos: 3 },
+  { id: 138, name: "Muerta", shortName: "muerta", defaultPos: 1 }
 ];
 
 HEROES.forEach(h => {
-  if (!h.img) h.img = getHeroImg(h.shortName);
+  h.img = getHeroImg(h.shortName);
 });
 
 export const HERO_MAP = new Map(HEROES.map(h => [h.id, h]));
