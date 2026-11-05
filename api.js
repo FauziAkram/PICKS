@@ -1,5 +1,5 @@
-// In-memory cache for raw stats from OpenDota to enable instant rank recalculations
 let cachedRawHeroes = null;
+const matchupCache = new Map();
 
 /**
  * Fetches all Dota 2 hero data and calculates dynamic win rates based on selected rank brackets [1 to 8]
@@ -44,7 +44,6 @@ export async function fetchLiveHeroStats(selectedBrackets = [1, 2, 3, 4, 5, 6, 7
         roles: hero.roles,
         defaultPos: defaultPos,
         liveWinRate: liveWinRate,
-        baseWinRate: liveWinRate,
         picks: picks,
         wins: wins
       };
@@ -52,5 +51,37 @@ export async function fetchLiveHeroStats(selectedBrackets = [1, 2, 3, 4, 5, 6, 7
   } catch (error) {
     console.error("Failed to fetch live Dota stats:", error);
     return [];
+  }
+}
+
+/**
+ * Fetches real head-to-head empirical matchup win rates for a hero from OpenDota API
+ * Returns a map of: enemyHeroId -> head-to-head advantage (-10.0% to +10.0%)
+ */
+export async function fetchHeroMatchupData(heroId) {
+  if (matchupCache.has(heroId)) {
+    return matchupCache.get(heroId);
+  }
+
+  try {
+    const response = await fetch(`https://api.opendota.com/api/heroes/${heroId}/matchups`);
+    if (!response.ok) return {};
+    const matchups = await response.json();
+
+    const advantageMap = {};
+    matchups.forEach((m) => {
+      if (m.games_played >= 20) {
+        // Empirical win rate of heroId against this specific enemy
+        const headToHeadWinRate = (m.wins / m.games_played) * 100;
+        // Advantage relative to 50% baseline
+        advantageMap[m.hero_id] = parseFloat((headToHeadWinRate - 50.0).toFixed(2));
+      }
+    });
+
+    matchupCache.set(heroId, advantageMap);
+    return advantageMap;
+  } catch (err) {
+    console.error(`Error fetching matchups for hero ${heroId}:`, err);
+    return {};
   }
 }
