@@ -55,8 +55,9 @@ export async function fetchLiveHeroStats(selectedBrackets = [1, 2, 3, 4, 5, 6, 7
 }
 
 /**
- * Fetches real head-to-head empirical matchup win rates for a hero from OpenDota API
- * Returns raw head-to-head win rate: enemyHeroId -> headToHeadWinRate (e.g. 56.5%)
+ * Fetches real head-to-head empirical matchup win rates from OpenDota API.
+ * In OpenDota, m.wins represents the OTHER hero's wins.
+ * So heroId win rate vs enemy = 100 - (m.wins / m.games_played * 100)
  */
 export async function fetchHeroMatchupData(heroId) {
   if (matchupCache.has(heroId)) {
@@ -71,9 +72,10 @@ export async function fetchHeroMatchupData(heroId) {
     const rawMatchupWinRates = {};
     matchups.forEach((m) => {
       if (m.games_played >= 15) {
-        // Exact percentage of matches heroId won when playing against m.hero_id
-        const winRateVsEnemy = (m.wins / m.games_played) * 100;
-        rawMatchupWinRates[m.hero_id] = parseFloat(winRateVsEnemy.toFixed(2));
+        // Correct OpenDota inversion: m.wins is the opponent's wins
+        const opponentWinRate = (m.wins / m.games_played) * 100;
+        const heroWinRateVsOpponent = 100.0 - opponentWinRate;
+        rawMatchupWinRates[m.hero_id] = parseFloat(heroWinRateVsOpponent.toFixed(2));
       }
     });
 
